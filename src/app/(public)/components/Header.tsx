@@ -50,14 +50,14 @@ export default function Header() {
         <Link href="/" className="flex items-center gap-2 min-w-0" aria-label="Startseite">
           <Image
             src="/logo.png"
-            alt="Software Fliesenleger"
+            alt="GLENO"
             width={320}
             height={74}
             priority
             /* Logo nicht höher als die Bar */
             className="h-10 w-auto max-w-[60vw]"
           />
-          <span className="sr-only">Software Fliesenleger</span>
+          <span className="sr-only">GLENO</span>
         </Link>
         <button
           aria-label="Menü öffnen"
@@ -132,14 +132,14 @@ export default function Header() {
         <Link href="/" className="flex items-center gap-3 min-w-0" aria-label="Startseite">
           <Image
             src="/logo.png"
-            alt="Software Fliesenleger"
+            alt="GLENO"
             width={480}
             height={112}
             priority
             /* Logo nicht höher als die Bar */
             className="h-12 w-auto max-w-[40vw]"
           />
-          <span className="sr-only">Software Fliesenleger</span>
+          <span className="sr-only">GLENO</span>
         </Link>
 
         <nav className="flex gap-2">

@@ -259,7 +259,7 @@ export default function DankePage() {
 
         {/* Fußnote */}
         <p className="mt-8 text-center text-xs text-slate-500">
-          Support: kontakt@software-fliesenleger.de · +49 5035 3169991
+          Support: support@gleno.de · +49 5035 3169991
         </p>
       </div>
     </main>

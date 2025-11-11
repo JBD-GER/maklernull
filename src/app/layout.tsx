@@ -5,7 +5,7 @@ import { ReactNode, Suspense } from 'react'
 import GtmProvider from '@/app/(public)/components/GtmProvider'
 import CookieBanner from '@/app/(public)/components/CookieBanner'
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://software-fliesenleger.de'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://gleno.de'
 const gtmId = process.env.NEXT_PUBLIC_GTM_ID
 
 export const metadata: Metadata = {

@@ -2,12 +2,12 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.software-fliesenleger.de'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://gleno.de'
 const PRIMARY = '#0a1b40'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: 'CSV-Vorlage Kunden & Import – Software Fliesenleger', template: '%s | Software Fliesenleger' },
+  title: { default: 'CSV-Vorlage Kunden & Import – GLENO', template: '%s | GLENO ' },
   description:
     'CSV-Vorlage für Kunden inkl. Anleitung für den fehlerfreien Import (E-Mail ODER Telefon erforderlich).',
   alternates: { canonical: `${SITE_URL}/docs/csv-vorlagen` },

@@ -360,8 +360,8 @@ export default function RegisterPage() {
               <a href="tel:+4950353169991" className="inline-flex items-center justify-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 backdrop-blur transition hover:bg-white/25">
                 <PhoneIcon className="h-5 w-5" /> +49&nbsp;5035&nbsp;3169991
               </a>
-              <a href="mailto:kontakt@software-fliesenleger.de" className="inline-flex items-center justify-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 backdrop-blur transition hover:bg-white/25">
-                <EnvelopeIcon className="h-5 w-5" /> kontakt@software-fliesenleger.de
+              <a href="mailto:support@gleno.de" className="inline-flex items-center justify-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/20 backdrop-blur transition hover:bg-white/25">
+                <EnvelopeIcon className="h-5 w-5" /> support@gleno.de
               </a>
             </div>
           </div>

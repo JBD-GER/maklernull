@@ -18,10 +18,10 @@ type PartnerCtx = {
 
 // Deine Firmendaten (Footer)
 const BRAND = {
-  name: 'Software Fliesenleger',
-  supportEmail: 'support@software-fliesenleger.de',
+  name: 'GLENO',
+  supportEmail: 'support@gleno.de',
   phone: '+49 5035 3169991',
-  legalNote: '© Software Fliesenleger – Server in der EU • DSGVO-konform'
+  legalNote: '© GLENO – Server in der EU • DSGVO-konform'
 }
 
 const baseWrap = (preheader: string, title: string, contentHtml: string) => `<!doctype html>

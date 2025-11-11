@@ -4,16 +4,16 @@ import Footer from './components/Footer'
 import CookieBanner from './components/CookieBanner'
 import { MaybeChrome, MainWithOffset } from './components/RouteChrome' // <-- NEU
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://software-fliesenleger.de'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://gleno.de'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'Software für Fliesenleger – Angebot, Auftrag, Rechnung & Projekte',
-    template: '%s | Software Fliesenleger',
+    default: 'GLENO – Marktplatz, CRM & Website in einem',
+    template: '%s | GLENO',
   },
   description:
-    'All-in-One Software für Fliesenleger: Angebote, Aufträge, Rechnungen, Projekte, Kalender & Zeiterfassung.',
+    'GLENO vereint Marktplatz, CRM und Website in einer Plattform.',
   alternates: { canonical: '/' },
   robots: {
     index: true,
@@ -29,17 +29,17 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: siteUrl,
-    siteName: 'Software Fliesenleger',
-    title: 'Software für Fliesenleger',
+    siteName: 'GLENO',
+    title: 'GLENO – Marktplatz, CRM & Website in einem',
     description:
       'Angebote, Aufträge, Rechnungen & Projekte – alles in einem Tool.',
     images: [
-      { url: '/og.png', width: 1200, height: 630, alt: 'Software Fliesenleger' },
+      { url: '/og.png', width: 1200, height: 630, alt: 'GLENO' },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Software für Fliesenleger',
+    title: 'GLENO – Marktplatz, CRM & Website in einem',
     description:
       'Angebote, Aufträge, Rechnungen & Projekte – alles in einem Tool.',
     images: ['/og.png'],

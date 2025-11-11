@@ -1,7 +1,7 @@
 // src/app/sitemap.ts
 import type { MetadataRoute } from 'next'
 
-const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.example.com'
+const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://gleno.de'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date().toISOString()

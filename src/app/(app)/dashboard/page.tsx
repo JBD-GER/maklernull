@@ -319,7 +319,7 @@ export default async function DashboardPage() {
         contacts={{
           name: 'Christoph Pfad',
           phone: '050353169999',
-          email: 'kontakt@software-fliesenleger.de',
+          email: 'support@gleno.de',
         }}
       />
     </div>

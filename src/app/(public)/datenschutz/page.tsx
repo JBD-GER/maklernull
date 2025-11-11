@@ -1,9 +1,9 @@
 // src/app/(public)/datenschutz/page.tsx
 
 export const metadata = {
-  title: 'Datenschutz – Software Fliesenleger',
+  title: 'Datenschutz – GLENO',
   description:
-    'Datenschutzerklärung der Software Fliesenleger – Informationen zur Erhebung, Verarbeitung und Nutzung Ihrer personenbezogenen Daten.',
+    'Datenschutzerklärung von GLENO – Informationen zur Erhebung, Verarbeitung und Nutzung Ihrer personenbezogenen Daten.',
 }
 
 export default function DatenschutzPage() {

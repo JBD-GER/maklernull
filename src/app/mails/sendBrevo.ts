@@ -51,7 +51,7 @@ export async function sendBrevo(formData: FormData) {
   const pass = process.env.BREVO_SMTP_PASS as string    // dein SMTP-Schlüssel
 
   const fromEmail = process.env.BREVO_SENDER_EMAIL || 'no-reply@your-domain.tld'
-  const fromName  = process.env.BREVO_SENDER_NAME  || 'Software Fliesenleger'
+  const fromName  = process.env.BREVO_SENDER_NAME  || 'GLENO'
 
   console.log('[sendBrevo] SMTP config', {
     host, port, user: mask(user), pass: pass ? `(${String(pass).length} chars)` : '(MISSING)'

@@ -1,8 +1,8 @@
 // src/app/(public)/impressum/page.tsx
 
 export const metadata = {
-  title: 'Impressum – Software Fliesenleger',
-  description: 'Impressum der Software Fliesenleger – rechtliche Informationen und Kontaktangaben.',
+  title: 'Impressum – GLENO',
+  description: 'Impressum von GLENO – rechtliche Informationen und Kontaktangaben.',
 }
 
 export default function ImpressumPage() {

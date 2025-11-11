@@ -18,7 +18,7 @@ import { supabaseClient } from '@/lib/supabase-client'
 const PRIMARY = '#5865f2'
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
-  (typeof window !== 'undefined' ? window.location.origin : 'https://software-fliesenleger.de')
+  (typeof window !== 'undefined' ? window.location.origin : 'https://gleno.de')
 
 function CheckEmailEffect({ onInfo }: { onInfo: (msg: string) => void }) {
   const qp = useSearchParams()

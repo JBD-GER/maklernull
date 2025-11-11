@@ -1,14 +1,14 @@
 import type { Metadata } from 'next'
 import MarktClient from './MarktClient'
 
-const SITE_NAME = 'Software Fliesenleger'
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.software-fliesenleger.de'
+const SITE_NAME = 'GLENO'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.gleno.de'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: 'Markt – Anfrage erfassen',
-    template: '%s | Software Fliesenleger',
+    template: '%s | GLENO',
   },
   description:
     'Formuliere deine Anfrage – wir strukturieren sie automatisch (Branche, Kategorie, Ausführung) und erzeugen einen nutzbaren Nachrichtentext. Budget wird bei Bedarf empfohlen.',
