@@ -83,12 +83,12 @@ export default function Footer() {
                 <li className="flex items-center gap-2">
                   <GlobeAltIcon className="h-5 w-5 text-slate-400" />
                   <a
-                    href="https://gleno.de"
+                    href="https://www.gleno.de"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:text-slate-900"
                   >
-                    gleno.de
+                    www.gleno.de
                   </a>
                 </li>
               </ul>
