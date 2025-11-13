@@ -7,176 +7,185 @@ import { supabaseServer } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-const admin  = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-/* ---------------- helpers ---------------- */
+const admin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
+/* ----------------- Helpers ----------------- */
 
 function getBaseUrl(req: Request) {
   const envUrl = process.env.NEXT_PUBLIC_SITE_URL
   if (envUrl) return envUrl
-  const host  = req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? 'localhost:3000'
-  const proto = req.headers.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https')
+  const host =
+    req.headers.get('x-forwarded-host') ??
+    req.headers.get('host') ??
+    'localhost:3000'
+  const proto =
+    req.headers.get('x-forwarded-proto') ??
+    (host.startsWith('localhost') ? 'http' : 'https')
   return `${proto}://${host}`
 }
 
-// accept price_… or prod_… (use product.default_price)
+// prod_ → default_price (price_) auflösen – gleiches Prinzip wie in deiner billing-Route
 async function resolvePriceId(id: string) {
-  if (!id) throw new Error('Missing STRIPE_PRICE_STARTER')
+  if (!id) throw new Error('Price-ID fehlt')
   if (id.startsWith('price_')) return id
   if (id.startsWith('prod_')) {
     const product = await stripe.products.retrieve(id, { expand: ['default_price'] })
     const dp = product.default_price as string | Stripe.Price | null
     const priceId = typeof dp === 'string' ? dp : dp?.id
-    if (!priceId) throw new Error(`Product ${id} has no default price.`)
+    if (!priceId) {
+      throw new Error(`Product ${id} hat keinen default_price hinterlegt.`)
+    }
     return priceId
   }
-  throw new Error('STRIPE_PRICE_STARTER must be a price_… or prod_… ID')
+  throw new Error('Ungültige Stripe-ID: muss mit price_ oder prod_ beginnen')
 }
 
-// Mappe freie Ländernamen → ISO-2
-function toIso2(country?: string | null): string | undefined {
-  if (!country) return undefined
-  const c = country.trim().toLowerCase()
-  const map: Record<string,string> = {
-    de: 'DE', deu: 'DE', deutschland: 'DE', germany: 'DE',
-    at: 'AT', aut: 'AT', österreich: 'AT', oesterreich: 'AT', austria: 'AT',
-    ch: 'CH', che: 'CH', schweiz: 'CH', switzerland: 'CH',
-    fr: 'FR', fra: 'FR', france: 'FR', frankreich: 'FR',
-    it: 'IT', ita: 'IT', italy: 'IT', italien: 'IT',
-    es: 'ES', esp: 'ES', spain: 'ES', spanien: 'ES'
+// Mapping: Paket-Code → ENV-Variable
+// (VK/VM + BASIS/PREMIUM/TOP + 1/2/3 Monate)
+const LISTING_PRODUCT_IDS: Record<string, string | undefined> = {
+  // Verkauf
+  VK_BASIS_1: process.env.STRIPE_PRICE_VK_BASIS_1,
+  VK_BASIS_2: process.env.STRIPE_PRICE_VK_BASIS_2,
+  VK_BASIS_3: process.env.STRIPE_PRICE_VK_BASIS_3,
+
+  VK_PREMIUM_1: process.env.STRIPE_PRICE_VK_PREMIUM_1,
+  VK_PREMIUM_2: process.env.STRIPE_PRICE_VK_PREMIUM_2,
+  VK_PREMIUM_3: process.env.STRIPE_PRICE_VK_PREMIUM_3,
+
+  VK_TOP_1: process.env.STRIPE_PRICE_VK_TOP_1,
+  VK_TOP_2: process.env.STRIPE_PRICE_VK_TOP_2,
+  VK_TOP_3: process.env.STRIPE_PRICE_VK_TOP_3,
+
+  // Vermietung
+  VM_BASIS_1: process.env.STRIPE_PRICE_VM_BASIS_1,
+  VM_BASIS_2: process.env.STRIPE_PRICE_VM_BASIS_2,
+  VM_BASIS_3: process.env.STRIPE_PRICE_VM_BASIS_3,
+
+  VM_PREMIUM_1: process.env.STRIPE_PRICE_VM_PREMIUM_1,
+  VM_PREMIUM_2: process.env.STRIPE_PRICE_VM_PREMIUM_2,
+  VM_PREMIUM_3: process.env.STRIPE_PRICE_VM_PREMIUM_3,
+
+  VM_TOP_1: process.env.STRIPE_PRICE_VM_TOP_1,
+  VM_TOP_2: process.env.STRIPE_PRICE_VM_TOP_2,
+  VM_TOP_3: process.env.STRIPE_PRICE_VM_TOP_3,
+
+  // Optionale Testcodes – nur zum Workflow-Testen
+  TEST_1: process.env.STRIPE_PRICE_TEST_1,
+  TEST_2: process.env.STRIPE_PRICE_TEST_2,
+  TEST_3: process.env.STRIPE_PRICE_TEST_3,
+}
+
+async function getListingStripePriceId(packageCode: string): Promise<string> {
+  const productOrPriceId = LISTING_PRODUCT_IDS[packageCode]
+  if (!productOrPriceId) {
+    throw new Error(
+      `Für packageCode "${packageCode}" ist keine ENV-Variable gesetzt.`
+    )
   }
-  if (map[c]) return map[c]
-  // wenn schon ISO-2
-  if (/^[A-Za-z]{2}$/.test(country)) return country.toUpperCase()
-  return undefined
+  return resolvePriceId(productOrPriceId)
 }
 
-type ProfileForStripe = {
-  email?: string | null
-  first_name?: string | null
-  last_name?: string | null
-  company_name?: string | null
-  street?: string | null
-  house_number?: string | null
-  postal_code?: string | null
-  city?: string | null
-  country?: string | null
-  vat_number?: string | null
-}
+/* ----------------- Handler ----------------- */
 
-// Name/Firma/Adresse/VAT → Stripe-Customer
-async function syncCustomerDataToStripe(customerId: string, p: ProfileForStripe) {
-  const iso = toIso2(p.country)
-  const line1 = [p.street, p.house_number].filter(Boolean).join(' ').trim() || undefined
-
-  // Nur schreiben, wenn Adresse plausibel (Stripe validiert u.a. country ISO)
-  const addr: Stripe.AddressParam | undefined =
-    (iso && (line1 || p.postal_code || p.city))
-      ? { line1, postal_code: p.postal_code || undefined, city: p.city || undefined, country: iso }
-      : undefined
-
-  const contactName = [p.first_name, p.last_name].filter(Boolean).join(' ').trim() || undefined
-  const displayName = (p.company_name && p.company_name.trim().length > 1)
-    ? p.company_name!
-    : (contactName || undefined)
-
-  await stripe.customers.update(customerId, {
-    name: displayName,
-    address: addr, // wenn undefined → Checkout sammelt sie ein
-    email: p.email || undefined,
-    shipping: addr && contactName ? { name: contactName, address: addr } : undefined,
-    invoice_settings: (p.company_name && contactName)
-      ? { custom_fields: [{ name: 'Kontakt', value: contactName }] }
-      : undefined,
-    metadata: { contact_name: contactName || '', company_name: p.company_name || '' },
-  })
-
-  // VAT als Tax ID
-  if (p.vat_number && p.vat_number.trim()) {
-    const vat = p.vat_number.trim()
-    try {
-      const existing = await stripe.customers.listTaxIds(customerId, { limit: 20 })
-      const same = existing.data.find(t => t.type === 'eu_vat' && t.value?.toUpperCase() === vat.toUpperCase())
-      if (!same) await stripe.customers.createTaxId(customerId, { type: 'eu_vat', value: vat })
-    } catch (e) {
-      console.warn('[stripe] createTaxId failed (ignored):', (e as any)?.message)
-    }
-  }
-}
-
-/* ---------------- main ---------------- */
-
-async function createSessionForUser(req: Request) {
+export async function POST(req: Request) {
   const supabase = await supabaseServer()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('UNAUTHORIZED')
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
-  const { data: p, error } = await admin
-    .from('profiles')
-    .select(`
-      email, first_name, last_name, company_name,
-      street, house_number, postal_code, city, country,
-      vat_number, stripe_customer_id
-    `)
-    .eq('id', user.id)
-    .single()
-  if (error || !p) throw new Error('PROFILE_NOT_FOUND')
-
-  // Ensure Stripe customer
-  let customerId = p.stripe_customer_id as string | null
-  if (!customerId) {
-    const cust = await stripe.customers.create({
-      email: p.email || undefined,
-      metadata: { supabase_user_id: user.id },
-    })
-    customerId = cust.id
-    await admin.from('profiles').update({ stripe_customer_id: customerId }).eq('id', user.id)
-  } else {
-    try { await stripe.customers.update(customerId, { metadata: { supabase_user_id: user.id } }) } catch {}
+  if (userError || !user) {
+    return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
   }
 
-  // Schreibe bekannte Daten (mit ISO-Ländercode) – sonst sammelt Checkout
-  await syncCustomerDataToStripe(customerId, p)
+  const { listingId, packageCode, runtimeMonths } = await req.json()
+
+  if (!listingId || !packageCode) {
+    return NextResponse.json(
+      { error: 'listingId oder packageCode fehlt' },
+      { status: 400 }
+    )
+  }
+
+  // 1) Listing holen & Ownership checken
+  const { data: listing, error } = await admin
+    .from('listings')
+    .select('*')
+    .eq('id', listingId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (error || !listing) {
+    return NextResponse.json(
+      { error: 'Inserat nicht gefunden' },
+      { status: 404 }
+    )
+  }
+
+  // 2) Paket & Laufzeit im Listing speichern
+  await admin
+    .from('listings')
+    .update({
+      package_code: packageCode,
+      runtime_months: runtimeMonths ?? null,
+      status: 'pending_payment',
+    })
+    .eq('id', listingId)
+
+  // 3) Passende Stripe-Price-ID ermitteln (prod_ → price_, falls nötig)
+  let priceId: string
+  try {
+    priceId = await getListingStripePriceId(packageCode)
+  } catch (e: any) {
+    console.error('[listings/checkout] getListingStripePriceId error:', e)
+    return NextResponse.json(
+      { error: e.message || 'Preis-Konfiguration fehlerhaft' },
+      { status: 500 }
+    )
+  }
 
   const baseUrl = getBaseUrl(req)
-  const priceId = await resolvePriceId(process.env.STRIPE_PRICE_STARTER!)
 
-  const session = await stripe.checkout.sessions.create({
-    mode: 'subscription',
-    customer: customerId,
-    client_reference_id: user.id,
-    line_items: [{ price: priceId, quantity: 1 }],
-    allow_promotion_codes: true,
-
-    // Wichtig für VAT: Adresse einsammeln & zurück zum Customer schreiben
-    billing_address_collection: 'required',
-    customer_update: { address: 'auto', name: 'auto', shipping: 'auto' },
-    tax_id_collection: { enabled: true },
-    automatic_tax: { enabled: true },
-    // automatic_tax: { enabled: true }, // optional
-
-    subscription_data: { metadata: { supabase_user_id: user.id } },
-    success_url: `${baseUrl}/dashboard/danke`,
-    cancel_url: `${baseUrl}/paywall?canceled=1`,
-  })
-
-  return session.url!
-}
-
-async function handler(req: Request) {
-  const u = new URL(req.url)
-  if (u.searchParams.get('ping')) return NextResponse.json({ ok: true, route: 'billing/checkout' })
-
+  // 4) Checkout-Session (mode: payment) erstellen
   try {
-    const url = await createSessionForUser(req)
-    return NextResponse.redirect(url, 303)
+    const session = await stripe.checkout.sessions.create({
+  mode: 'payment',
+  line_items: [{ price: priceId, quantity: 1 }],
+  customer_email:
+    listing.contact_email || user.email || undefined,
+  metadata: {
+    kind: 'listing',
+    listing_id: listing.id,
+    package_code: packageCode,
+    runtime_months: runtimeMonths ? String(runtimeMonths) : '',
+  },
+  payment_intent_data: {
+    metadata: {
+      kind: 'listing',
+      listing_id: listing.id,
+      package_code: packageCode,
+      runtime_months: runtimeMonths ? String(runtimeMonths) : '',
+    },
+  },
+  // ⬇️ HIER neu:
+  success_url: `${baseUrl}/dashboard/inserieren/erfolg?listing=${listing.id}`,
+  cancel_url: `${baseUrl}/dashboard/inserieren?payment=cancel&listing=${listing.id}`,
+})
+
+
+    return NextResponse.json({ url: session.url }, { status: 200 })
   } catch (e: any) {
-    if (e?.message === 'UNAUTHORIZED')      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (e?.message === 'PROFILE_NOT_FOUND') return NextResponse.json({ error: 'Profil nicht gefunden' }, { status: 400 })
-    console.error('[checkout] error:', e)
-    return NextResponse.json({ error: String(e?.message || 'Checkout error') }, { status: 500 })
+    console.error('[listings/checkout] Stripe error:', e)
+    return NextResponse.json(
+      {
+        error: 'Fehler beim Erstellen der Stripe-Session',
+        details: e.message,
+      },
+      { status: 500 }
+    )
   }
 }
-
-export async function GET(req: Request)  { return handler(req) }
-export async function POST(req: Request) { return handler(req) }

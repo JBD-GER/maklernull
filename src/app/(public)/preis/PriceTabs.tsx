@@ -26,7 +26,7 @@ const verkaufPakete: Paket[] = [
     label: 'VK-Basis',
     shortName: 'VK-Basis',
     priceFrom: 'ab 249 €',
-    hint: 'inkl. MwSt. • einmalig',
+    hint: 'zzgl. MwSt. • einmalig',
     duration: 'Dauer: in der Regel 1–3 Monate',
     bullets: [
       'Inserierung auf Immobilienscout24',
@@ -42,7 +42,7 @@ const verkaufPakete: Paket[] = [
     label: 'VK-Premium',
     shortName: 'VK-Premium',
     priceFrom: 'ab 399 €',
-    hint: 'inkl. MwSt. • einmalig',
+    hint: 'zzgl. MwSt. • einmalig',
     duration: 'Dauer: in der Regel 1–3 Monate',
     badge: 'Empfehlung',
     bullets: [
@@ -67,7 +67,7 @@ const verkaufPakete: Paket[] = [
     label: 'VK-Top',
     shortName: 'VK-Top',
     priceFrom: 'ab 299 €',
-    hint: 'inkl. MwSt. • einmalig',
+    hint: 'zzgl. MwSt. • einmalig',
     duration: 'Dauer: in der Regel 1–3 Monate',
     bullets: [
       'Inserierung auf allen vier Portalen',
@@ -90,7 +90,7 @@ const vermietungPakete: Paket[] = [
     label: 'VM-Basis',
     shortName: 'VM-Basis',
     priceFrom: 'ab 199 €',
-    hint: 'inkl. MwSt. • einmalig',
+    hint: 'zzgl. MwSt. • einmalig',
     duration: 'Dauer: in der Regel 1–3 Monate',
     bullets: [
       'Inserierung auf Immobilienscout24',
@@ -105,7 +105,7 @@ const vermietungPakete: Paket[] = [
     label: 'VM-Premium',
     shortName: 'VM-Premium',
     priceFrom: 'ab 349 €',
-    hint: 'inkl. MwSt. • einmalig',
+    hint: 'zzgl. MwSt. • einmalig',
     duration: 'Dauer: in der Regel 1–3 Monate',
     badge: 'Empfehlung',
     bullets: [
@@ -129,7 +129,7 @@ const vermietungPakete: Paket[] = [
     label: 'VM-Top',
     shortName: 'VM-Top',
     priceFrom: 'ab 249 €',
-    hint: 'inkl. MwSt. • einmalig',
+    hint: 'zzgl. MwSt. • einmalig',
     duration: 'Dauer: in der Regel 1–3 Monate',
     bullets: [
       'Inserierung auf allen vier Portalen',

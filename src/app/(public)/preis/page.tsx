@@ -255,7 +255,7 @@ export default function PricePage() {
               <p className="mx-auto mt-3 max-w-2xl text-sm sm:text-base leading-relaxed text-slate-700">
                 Wählen Sie, ob Sie verkaufen oder vermieten möchten – und entscheiden Sie
                 sich anschließend für das Paket, das am besten zu Ihrer Situation passt.
-                Alle Pakete sind einmalig, inklusive Mehrwertsteuer und ohne automatische
+                Alle Pakete sind einmalig, exklusive Mehrwertsteuer und ohne automatische
                 Verlängerung.
               </p>
 
@@ -284,7 +284,7 @@ export default function PricePage() {
               Wir sind uns bewusst, dass unsere Preise im Vergleich zu direkten
               Marktteilnehmern höher sein können. Dafür bieten wir Ihnen ein deutlich
               umfangreicheres Serviceniveau und einen intensiveren persönlichen Kontakt.
-              Alle Preise verstehen sich <strong>inklusive Mehrwertsteuer</strong>.
+              Alle Preise verstehen sich <strong>exklusive Mehrwertsteuer</strong>.
             </p>
 
             {/* Verkauf */}

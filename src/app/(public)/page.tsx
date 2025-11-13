@@ -97,13 +97,13 @@ function JsonLd() {
             '@type': 'Offer',
             price: '249.00',
             priceCurrency: 'EUR',
-            description: 'Verkaufspaket ab 249 € inkl. MwSt.',
+            description: 'Verkaufspaket ab 249 € zzgl. MwSt.',
           },
           {
             '@type': 'Offer',
             price: '199.00',
             priceCurrency: 'EUR',
-            description: 'Vermietungspaket ab 199 € inkl. MwSt.',
+            description: 'Vermietungspaket ab 199 € zzgl. MwSt.',
           },
         ],
       },
@@ -387,12 +387,12 @@ export default function HomePage() {
             <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-200">
               <span className="inline-flex items-center rounded-full bg-slate-900/80 px-3 py-1 ring-1 ring-slate-700/80">
                 Verkauf ab{' '}
-                <strong className="ml-1 font-semibold">249 €</strong> inkl.
+                <strong className="ml-1 font-semibold">249 €</strong> zzgl.
                 MwSt.
               </span>
               <span className="inline-flex items-center rounded-full bg-slate-900/80 px-3 py-1 ring-1 ring-slate-700/80">
                 Vermietung ab{' '}
-                <strong className="ml-1 font-semibold">199 €</strong> inkl.
+                <strong className="ml-1 font-semibold">199 €</strong> zzgl.
                 MwSt.
               </span>
             </div>
