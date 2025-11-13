@@ -126,58 +126,60 @@ export default function InserierenPage() {
   }
 
 const handleSubmit = async () => {
-    if (!canContinue()) return
-    setSubmitting(true)
-    setError(null)
-    setSuccess(null)
+  if (!canContinue()) return
+  setSubmitting(true)
+  setError(null)
+  setSuccess(null)
 
-    try {
-      const res = await fetch('/api/listings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          transactionType,
-          usageType,
-          saleCategory,
-          rentCategory,
-          title,
-          description,
-          street,
-          houseNumber,
-          postalCode,
-          city,
-          country,
-          livingArea,
-          landArea,
-          rooms,
-          floor,
-          totalFloors,
-          yearBuilt,
-          price,
-          currency,
-          availability,
-          isFurnished,
-          contactName,
-          contactEmail,
-          contactPhone,
-        }),
-      })
+  try {
+    const res = await fetch('/api/listings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        transactionType,
+        usageType,
+        saleCategory,
+        rentCategory,
+        title,
+        description,
+        street,
+        houseNumber,
+        postalCode,
+        city,
+        country,
+        livingArea,
+        landArea,
+        rooms,
+        floor,
+        totalFloors,
+        yearBuilt,
+        price,
+        currency,
+        availability,
+        isFurnished,
+        contactName,
+        contactEmail,
+        contactPhone,
+      }),
+    })
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data.error || 'Fehler beim Speichern')
-      }
-
-      const { listing } = await res.json()
-
-      // ⬇️ Direkt zur Paketauswahl weiterleiten
-      router.push(`/dashboard/inserieren/paket?listing=${listing.id}`)
-    } catch (e: any) {
-      setError(e.message || 'Unbekannter Fehler')
-    } finally {
-      setSubmitting(false)
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      throw new Error(data.error || 'Fehler beim Speichern')
     }
+
+    const { listing } = await res.json()
+
+    // ⬇️ HIER angepasst: transactionType mitgeben
+    router.push(
+      `/dashboard/inserieren/paket?listing=${listing.id}&kind=${transactionType}`
+    )
+  } catch (e: any) {
+    setError(e.message || 'Unbekannter Fehler')
+  } finally {
+    setSubmitting(false)
   }
+}
 
   return (
     <section className="mx-auto max-w-5xl space-y-6 px-4 pb-10 pt-4">

@@ -239,8 +239,14 @@ export default function PaketAuswahlPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const listingId = searchParams.get('listing')
+  const kindParam = searchParams.get('kind') as 'sale' | 'rent' | null
 
-  const [segment, setSegment] = useState<Segment>('sale')
+  // ⬇️ Initiales Segment: sale/rent aus Query – sonst 'test'
+  const [segment, setSegment] = useState<Segment>(() => {
+    if (kindParam === 'sale' || kindParam === 'rent') return kindParam
+    return 'test'
+  })
+
   const [selectedCode, setSelectedCode] = useState<PackageCode | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -330,7 +336,7 @@ export default function PaketAuswahlPage() {
       </div>
 
       {/* Segment-Tabs */}
-      <div className="mb-6 rounded-3xl border border-white/70 bg-white/90 p-2 text-xs shadow-[0_18px_40px_rgba(15,23,42,0.04)] backdrop-blur-2xl">
+      <div className="mb-6 rounded-3xl border border-white/70 bg.white/90 p-2 text-xs shadow-[0_18px_40px_rgba(15,23,42,0.04)] backdrop-blur-2xl">
         <div className="flex gap-2">
           {(['sale', 'rent', 'test'] as Segment[]).map((s) => {
             const active = s === segment
@@ -378,9 +384,7 @@ export default function PaketAuswahlPage() {
                 active
                   ? 'border-slate-900 bg-slate-900 text-white shadow-[0_18px_60px_rgba(15,23,42,0.55)]'
                   : 'border-white/70 bg-white/90 text-slate-900 hover:border-slate-300 hover:bg-white',
-                isPremium && !active
-                  ? 'ring-1 ring-slate-900/5'
-                  : '',
+                isPremium && !active ? 'ring-1 ring-slate-900/5' : '',
               ].join(' ')}
             >
               <div className="space-y-2">
