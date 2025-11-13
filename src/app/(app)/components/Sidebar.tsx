@@ -7,61 +7,74 @@ import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabaseClient } from '@/lib/supabase-client'
 import {
-  // Management / Core
   HomeIcon,
-  UsersIcon,
-  Cog6ToothIcon,
-  CalendarDaysIcon,
-  ArrowRightOnRectangleIcon,
-  Squares2X2Icon,
-  BuildingStorefrontIcon,
-  TruckIcon,
-  WrenchScrewdriverIcon,
-  BanknotesIcon,
-  FolderOpenIcon,
-  DocumentPlusIcon,
-  ClipboardDocumentCheckIcon,
-  DocumentCurrencyEuroIcon,
-  AdjustmentsVerticalIcon,
-  CreditCardIcon,
-  UserCircleIcon,
-  ClipboardDocumentListIcon,
-  ClockIcon,
-  BookOpenIcon,
-  GlobeAltIcon,
-  // Markt
-  MapIcon,
-  BoltIcon,
-  ChatBubbleLeftRightIcon,
-  ShieldCheckIcon,
-  UserPlusIcon,
   PencilSquareIcon,
+  BuildingOffice2Icon,
+  ChatBubbleLeftRightIcon,
+  CalendarDaysIcon,
+  BanknotesIcon,
+  Cog6ToothIcon,
+  ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline'
-
-type Badge = { text: string; tone?: 'indigo' | 'emerald' | 'amber' | 'rose' | 'slate' }
 
 type NavItem = {
   href: string
   label: string
   icon: ComponentType<SVGProps<SVGSVGElement>>
   children?: NavItem[]
-  badge?: Badge
 }
 
 type SidebarProps = { userEmail: string }
 
-type MyPartner = {
-  id: string
-  status: string
-  display_name: string | null
-  company_name: string | null
-  branch_id: string | null
-  city: string | null
-}
-
 function cls(...arr: Array<string | false | null | undefined>) {
   return arr.filter(Boolean).join(' ')
 }
+
+// Hauptnavigation für Eigentümer
+const NAV_ITEMS: NavItem[] = [
+  {
+    href: '/dashboard',
+    label: 'Dashboard',
+    icon: HomeIcon,
+  },
+  {
+    href: '/dashboard/inserieren',
+    label: 'Inserieren',
+    icon: PencilSquareIcon,
+  },
+  {
+    href: '/dashboard/inserate',
+    label: 'Inserate',
+    icon: BuildingOffice2Icon,
+    children: [
+      {
+        href: '/dashboard/inserate',
+        label: 'Übersicht',
+        icon: BuildingOffice2Icon,
+      },
+      {
+        href: '/dashboard/inserate/nachrichten',
+        label: 'Nachrichten',
+        icon: ChatBubbleLeftRightIcon,
+      },
+      {
+        href: '/dashboard/inserate/terminkalender',
+        label: 'Terminkalender',
+        icon: CalendarDaysIcon,
+      },
+    ],
+  },
+  {
+    href: '/dashboard/baufinanzierung',
+    label: 'Baufinanzierung',
+    icon: BanknotesIcon,
+  },
+  {
+    href: '/dashboard/einstellung',
+    label: 'Einstellung',
+    icon: Cog6ToothIcon,
+  },
+]
 
 export default function Sidebar({ userEmail }: SidebarProps) {
   const router = useRouter()
@@ -69,60 +82,8 @@ export default function Sidebar({ userEmail }: SidebarProps) {
   const pathname = usePathname()
 
   const [openGroup, setOpenGroup] = useState<string | null>(null)
-  const [role, setRole] = useState<string>('mitarbeiter')
-  const [space, setSpace] = useState<'management' | 'markt'>(() =>
-    pathname?.startsWith('/dashboard/markt') ? 'markt' : 'management'
-  )
 
-  const [partnersLoading, setPartnersLoading] = useState(true)
-  const [myPartners, setMyPartners] = useState<MyPartner[]>([])
-
-  /* Rolle laden */
-  useEffect(() => {
-    let mounted = true
-    ;(async () => {
-      const { data: userResult } = await supabase.auth.getUser()
-      const user = userResult?.user
-      if (!user) return
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .maybeSingle()
-
-      if (mounted && profile?.role) setRole(profile.role)
-    })()
-    return () => {
-      mounted = false
-    }
-  }, [supabase])
-
-  /* Partner aus /api/partners/mine laden */
-  useEffect(() => {
-    let canceled = false
-    ;(async () => {
-      setPartnersLoading(true)
-      try {
-        const res = await fetch('/api/partners/mine', { cache: 'no-store' })
-        const j = await res.json()
-        if (!res.ok) throw new Error(j?.error || 'load_failed')
-        if (!canceled) setMyPartners((j?.partners || []) as MyPartner[])
-      } catch {
-        if (!canceled) setMyPartners([])
-      } finally {
-        if (!canceled) setPartnersLoading(false)
-      }
-    })()
-    return () => {
-      canceled = true
-    }
-  }, [])
-
-  const hasPartner = myPartners.length > 0
-  const publicPartnerHref = hasPartner ? `/markt/partner/${myPartners[0].id}` : ''
-
-  // helpers
+  // Helper für aktive States
   const normalize = (p: string) => {
     if (!p) return '/'
     const n = p.replace(/\/+$/, '')
@@ -136,142 +97,9 @@ export default function Sidebar({ userEmail }: SidebarProps) {
     return pathNow.startsWith(base + '/')
   }
 
-  // Space nach URL + Rolle (Mitarbeiter dürfen keinen Markt-Switch haben)
+  // Beim Route-Wechsel passende Gruppe automatisch öffnen
   useEffect(() => {
-    if (role === 'mitarbeiter') {
-      setSpace('management')
-      return
-    }
-    if (pathname?.startsWith('/dashboard/markt')) setSpace('markt')
-    else setSpace('management')
-  }, [pathname, role])
-
-  /* ========= NAVIGATION: MANAGEMENT ========= */
-
-  const NAV_MANAGEMENT_ADMIN: NavItem[] = [
-    { href: '/dashboard', label: 'Übersicht', icon: HomeIcon },
-    { href: '/dashboard/kunde', label: 'Kunden', icon: UsersIcon },
-    { href: '/dashboard/mitarbeiter', label: 'Mitarbeiter', icon: UsersIcon },
-    {
-      href: '/dashboard/logistik',
-      label: 'Logistik',
-      icon: Squares2X2Icon,
-      children: [
-        { href: '/dashboard/logistik/materialien', label: 'Materialien', icon: Squares2X2Icon },
-        { href: '/dashboard/logistik/lieferanten', label: 'Lieferanten', icon: BuildingStorefrontIcon },
-        { href: '/dashboard/logistik/fuhrpark', label: 'Fuhrpark', icon: TruckIcon },
-        { href: '/dashboard/logistik/werkzeug', label: 'Werkzeug', icon: WrenchScrewdriverIcon },
-      ],
-    },
-    { href: '/dashboard/kalender', label: 'Kalender', icon: CalendarDaysIcon },
-    {
-      href: '/dashboard/projekt',
-      label: 'Projekte',
-      icon: FolderOpenIcon,
-      children: [
-        { href: '/dashboard/projekt', label: 'Übersicht', icon: FolderOpenIcon },
-        { href: '/dashboard/projekt/projektplaner', label: 'Projektplaner', icon: ClipboardDocumentListIcon },
-      ],
-    },
-    {
-      href: '/dashboard/website',
-      label: 'Website',
-      icon: GlobeAltIcon,
-      badge: { text: 'Beta', tone: 'indigo' },
-    },
-    {
-      href: '/dashboard/buchhaltung',
-      label: 'Buchhaltung',
-      icon: BanknotesIcon,
-      children: [
-        { href: '/dashboard/buchhaltung', label: 'Übersicht', icon: BanknotesIcon },
-        { href: '/dashboard/buchhaltung/angebot', label: 'Angebot', icon: DocumentPlusIcon },
-        { href: '/dashboard/buchhaltung/auftrag', label: 'Auftrag', icon: ClipboardDocumentCheckIcon },
-        { href: '/dashboard/buchhaltung/rechnung', label: 'Rechnung', icon: DocumentCurrencyEuroIcon },
-        { href: '/dashboard/buchhaltung/katalog', label: 'Katalog', icon: BookOpenIcon },
-      ],
-    },
-    {
-      href: '/dashboard/einstellung',
-      label: 'Einstellungen',
-      icon: Cog6ToothIcon,
-      children: [
-        { href: '/dashboard/einstellung/', label: 'Allgemein', icon: AdjustmentsVerticalIcon },
-        { href: '/dashboard/einstellung/abonnement', label: 'Abonnement', icon: CreditCardIcon },
-        { href: '/dashboard/einstellung/konto', label: 'Konto', icon: UserCircleIcon },
-      ],
-    },
-  ]
-
-  const NAV_MANAGEMENT_EMPLOYEE: NavItem[] = [
-    { href: '/dashboard/kalender', label: 'Mein Kalender', icon: CalendarDaysIcon },
-    { href: '/dashboard/projekt?assigned=me', label: 'Meine Projekte', icon: FolderOpenIcon },
-    { href: '/dashboard/personal/zeit', label: 'Zeiterfassung', icon: ClockIcon },
-  ]
-
-  const NAV_MANAGEMENT = role === 'mitarbeiter' ? NAV_MANAGEMENT_EMPLOYEE : NAV_MANAGEMENT_ADMIN
-
-  /* ========= NAVIGATION: MARKT ========= */
-
-  const NAV_MARKT: NavItem[] = [
-    {
-      href: '/dashboard/markt',
-      label: 'Markt Übersicht',
-      icon: BuildingStorefrontIcon,
-    },
-    {
-      href: '/dashboard/markt/anfragen',
-      label: 'Anfragen & Aufträge',
-      icon: MapIcon,
-      children: [
-        { href: '/dashboard/markt/anfragen', label: 'Alle Anfragen', icon: MapIcon },
-        { href: '/dashboard/markt/aktive-anfragen', label: 'Aktive Aufträge', icon: BoltIcon },
-        { href: '/dashboard/markt/bewerbungen', label: 'Meine Bewerbungen', icon: ClipboardDocumentListIcon },
-      ],
-    },
-    {
-      href: '/dashboard/markt/chat',
-      label: 'Nachrichten & Chat',
-      icon: ChatBubbleLeftRightIcon,
-    },
-    {
-      href: '/dashboard/markt/partnerprofil',
-      label: 'Partnerprofil & Setup',
-      icon: ShieldCheckIcon,
-      children: [
-        ...(hasPartner && publicPartnerHref
-          ? [
-              {
-                href: publicPartnerHref,
-                label: 'Mein Partnerprofil',
-                icon: ShieldCheckIcon,
-              } as NavItem,
-            ]
-          : []),
-        ...(!partnersLoading && !hasPartner
-          ? [
-              {
-                href: '/dashboard/markt/partner-werden',
-                label: 'Partner werden',
-                icon: UserPlusIcon,
-                badge: { text: 'Neu', tone: 'emerald' },
-              } as NavItem,
-            ]
-          : []),
-        {
-          href: '/dashboard/markt/partner-bearbeiten',
-          label: 'Profil bearbeiten',
-          icon: PencilSquareIcon,
-        },
-      ],
-    },
-  ]
-
-  const NAV = space === 'markt' ? NAV_MARKT : NAV_MANAGEMENT
-
-  /* Gruppe automatisch öffnen, wenn passend */
-  useEffect(() => {
-    const group = NAV.find(
+    const group = NAV_ITEMS.find(
       (i) =>
         i.children &&
         (isExact(i.href) ||
@@ -280,41 +108,7 @@ export default function Sidebar({ userEmail }: SidebarProps) {
     )
     setOpenGroup(group ? group.href : null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, role, space, hasPartner, partnersLoading, publicPartnerHref])
-
-  const BadgePill = ({ text, tone = 'slate' }: Badge) => {
-    const tones: Record<Required<Badge>['tone'], string> = {
-      indigo: 'bg-indigo-50 text-indigo-700 ring-indigo-200',
-      emerald: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
-      amber: 'bg-amber-50 text-amber-800 ring-amber-200',
-      rose: 'bg-rose-50 text-rose-700 ring-rose-200',
-      slate: 'bg-slate-100 text-slate-700 ring-slate-200',
-    }
-    return (
-      <span
-        className={cls(
-          'ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset',
-          tones[tone]
-        )}
-      >
-        {text}
-      </span>
-    )
-  }
-
-  const switchTo = (target: 'management' | 'markt') => {
-    if (target === space) return
-
-    // Mitarbeiter dürfen nicht auf Markt umschalten
-    if (role === 'mitarbeiter' && target === 'markt') return
-
-    setSpace(target)
-    if (target === 'markt') {
-      if (!pathname?.startsWith('/dashboard/markt')) router.push('/dashboard/markt')
-    } else {
-      if (pathname?.startsWith('/dashboard/markt')) router.push('/dashboard')
-    }
-  }
+  }, [pathname])
 
   return (
     <div
@@ -324,61 +118,38 @@ export default function Sidebar({ userEmail }: SidebarProps) {
           'radial-gradient(900px 600px at -20% -10%, rgba(15,23,42,0.06), transparent), radial-gradient(800px 500px at 120% -40%, rgba(88,101,242,0.07), transparent)',
       }}
     >
-      {/* Brand + Tabs */}
+      {/* Brand */}
       <div className="mb-3 px-4 pt-4">
         <div className="flex items-center justify-between gap-3">
-          {/* Logo */}
           <div className="flex items-center gap-2">
             <div className="relative rounded-2xl bg-white/70 px-2 py-1 shadow-sm ring-1 ring-white/60 backdrop-blur-xl">
               <Image
                 src="/favi.png"
-                alt="GLENO"
+                alt="Maklernull.de"
                 width={26}
                 height={26}
                 className="h-6 w-6 object-contain"
                 priority
               />
             </div>
-          </div>
-
-          {/* Tabs nur anzeigen, wenn NICHT Mitarbeiter */}
-          {role !== 'mitarbeiter' && (
-            <div className="inline-flex rounded-2xl bg-white/10 p-1 backdrop-blur-xl ring-1 ring-white/40 shadow-[0_10px_30px_rgba(15,23,42,0.14)]">
-              <button
-                type="button"
-                onClick={() => switchTo('management')}
-                className={cls(
-                  'px-3 py-1.5 text-[10px] sm:text-xs font-medium rounded-2xl transition-all',
-                  space === 'management'
-                    ? 'bg-white/90 text-slate-900 shadow-sm ring-1 ring-slate-200'
-                    : 'text-slate-500 hover:text-slate-800'
-                )}
-              >
-                Management
-              </button>
-              <button
-                type="button"
-                onClick={() => switchTo('markt')}
-                className={cls(
-                  'px-3 py-1.5 text-[10px] sm:text-xs font-medium rounded-2xl transition-all',
-                  space === 'markt'
-                    ? 'bg-slate-900 text-white shadow-sm ring-1 ring-slate-900/70'
-                    : 'text-slate-500 hover:text-slate-900'
-                )}
-              >
-                Markt
-              </button>
+            <div className="flex flex-col">
+              <span className="text-xs font-semibold tracking-tight text-slate-900">
+                Maklernull.de
+              </span>
+              <span className="text-[10px] text-slate-500">
+                Dein Vermarktungs-Dashboard
+              </span>
             </div>
-          )}
+          </div>
         </div>
 
-        <p className="mt-1 max-w-[220px] truncate text-[10px] text-slate-500">{userEmail}</p>
+        <p className="mt-2 max-w-[220px] truncate text-[10px] text-slate-500">{userEmail}</p>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-2 pb-4">
         <ul className="space-y-1">
-          {NAV.map((item) => {
+          {NAV_ITEMS.map((item) => {
             const hasChildren = !!item.children?.length
 
             if (!hasChildren) {
@@ -402,7 +173,6 @@ export default function Sidebar({ userEmail }: SidebarProps) {
                       )}
                     />
                     <span className="truncate">{item.label}</span>
-                    {item.badge && <BadgePill {...item.badge} />}
                   </Link>
                 </li>
               )
@@ -435,7 +205,6 @@ export default function Sidebar({ userEmail }: SidebarProps) {
                       )}
                     />
                     <span>{item.label}</span>
-                    {item.badge && <BadgePill {...item.badge} />}
                   </span>
                   <svg
                     className={cls(
@@ -480,7 +249,6 @@ export default function Sidebar({ userEmail }: SidebarProps) {
                           )}
                         />
                         <span className="truncate">{child.label}</span>
-                        {child.badge && <BadgePill {...child.badge} />}
                       </Link>
                     )
                   })}

@@ -1,9 +1,9 @@
 // src/app/(public)/datenschutz/page.tsx
 
 export const metadata = {
-  title: 'Datenschutz – GLENO',
+  title: 'Datenschutz – Maklernull',
   description:
-    'Datenschutzerklärung von GLENO – Informationen zur Erhebung, Verarbeitung und Nutzung Ihrer personenbezogenen Daten.',
+    'Datenschutzerklärung von Maklernull – Informationen zur Erhebung, Verarbeitung und Nutzung Ihrer personenbezogenen Daten.',
 }
 
 export default function DatenschutzPage() {
@@ -18,11 +18,11 @@ export default function DatenschutzPage() {
           <p>
             Verantwortlich für die Datenverarbeitung im Sinne der Datenschutz-Grundverordnung (DSGVO)
             ist:<br />
-            <strong>Flaaq Holding GmbH</strong><br />
+            <strong>Novax Digital GmbH</strong><br />
             Dammstr. 6G<br />
             30890 Barsinghausen<br />
-            E‑Mail: <a href="mailto:support@gleno.de" className="text-accent-500 hover:underline">support@gleno.de</a><br />
-            Telefon: +49 5035 3169991
+            E‑Mail: <a href="mailto:hey@maklernull.de" className="text-accent-500 hover:underline">hey@maklernull.de</a><br />
+            Telefon: +49 5035 3169999
           </p>
         </div>
 

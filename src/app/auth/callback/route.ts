@@ -44,11 +44,5 @@ export async function GET(req: NextRequest) {
       }
     } catch { /* ignore */ }
   }
-
-  if (role === 'konsument') {
-    res = NextResponse.redirect(new URL('/konsument', req.url))
-  } else {
-    res = NextResponse.redirect(new URL('/dashboard', req.url))
-  }
   return res
 }

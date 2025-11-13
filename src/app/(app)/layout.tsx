@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { supabaseServer } from '@/lib/supabase-server'
 import ResponsiveShell from './components/ResponsiveShell'
-import StripePaywallModal from './components/billing/StripePaywallModal'
 import OnboardingGate from './components/OnboardingGate'
 
 
@@ -27,11 +26,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     redirect('/login')
   }
 
-  // 3) Konsument darf hier NICHT rein
-  if (profile?.role === 'konsument') {
-    redirect('/konsument')
-  }
-
   // 4) Alles andere (admin/partner/…): App laden
   return (
     <>
@@ -39,7 +33,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {children}
       </ResponsiveShell>
       {/* Blockierende Paywall-Modal liegt ganz oben */}
-      <StripePaywallModal />
       <OnboardingGate />
     </>
   )

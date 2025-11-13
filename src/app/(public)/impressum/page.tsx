@@ -1,8 +1,8 @@
 // src/app/(public)/impressum/page.tsx
 
 export const metadata = {
-  title: 'Impressum – GLENO',
-  description: 'Impressum von GLENO – rechtliche Informationen und Kontaktangaben.',
+  title: 'Impressum – Maklernull',
+  description: 'Impressum von Maklernull – rechtliche Informationen und Kontaktangaben.',
 }
 
 export default function ImpressumPage() {
@@ -14,7 +14,7 @@ export default function ImpressumPage() {
         {/* Anbieter */}
         <div className="space-y-2">
           <h2 className="text-2xl font-semibold">Angaben gemäß § 5 TMG</h2>
-          <p>Flaaq Holding GmbH<br/>
+          <p>Novax Digital GmbH<br/>
              Dammstr. 6G<br/>
              30890 Barsinghausen
           </p>
@@ -25,21 +25,21 @@ export default function ImpressumPage() {
           <h2 className="text-2xl font-semibold">Handelsregister</h2>
           <p>
             Eingetragen beim Amtsgericht Hannover<br/>
-            HRB 223594
+            HRB 220589
           </p>
         </div>
 
         {/* Vertretungsberechtigte */}
         <div className="space-y-2">
           <h2 className="text-2xl font-semibold">Vertreten durch</h2>
-          <p>Geschäftsführer: Christoph Pfad</p>
+          <p>Geschäftsführer: Christoph Pfad, Philipp Polley</p>
         </div>
 
         {/* Kontakt */}
         <div className="space-y-2">
           <h2 className="text-2xl font-semibold">Kontakt</h2>
-          <p>Telefon: <a href="tel:+4950353169991" className="text-accent-500 hover:underline">+49 5035 3169991</a><br/>
-             E‑Mail: <a href="mailto:support@gleno.de" className="text-accent-500 hover:underline">support@gleno.de</a>
+          <p>Telefon: <a href="tel:+4950353169999" className="text-accent-500 hover:underline">+49 5035 3169999</a><br/>
+             E‑Mail: <a href="mailto:hey@maklernull.de" className="text-accent-500 hover:underline">hey@maklernull.de</a>
           </p>
         </div>
 
@@ -47,7 +47,7 @@ export default function ImpressumPage() {
         <div className="space-y-2">
           <h2 className="text-2xl font-semibold">Umsatzsteuer‑ID</h2>
           <p>Umsatzsteuer‑Identifikationsnummer gemäß § 27 a UStG:<br/>
-             DE 352217621
+             DE 335613731
           </p>
         </div>
 

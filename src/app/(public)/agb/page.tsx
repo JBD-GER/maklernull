@@ -1,8 +1,8 @@
 // src/app/(public)/agb/page.tsx
 
 export const metadata = {
-  title: 'AGB – GLENO ',
-  description: 'Allgemeine Geschäftsbedingungen (AGB) für die Nutzung von GLENO.',
+  title: 'AGB – Maklernull',
+  description: 'Allgemeine Geschäftsbedingungen (AGB) für die Nutzung von Maklernull.',
 }
 
 export default function AGBPage() {
@@ -15,8 +15,8 @@ export default function AGBPage() {
         <div className="space-y-2">
           <h2 className="text-2xl font-semibold">1. Geltungsbereich</h2>
           <p>
-            Diese Bedingungen gelten für alle Verträge über die Nutzung der GLENO
-            zwischen der Flaaq Holding GmbH (nachfolgend „Anbieter“) und ihren Kunden (nachfolgend
+            Diese Bedingungen gelten für alle Verträge über die Nutzung von Maklernull
+            zwischen der Novax Digital GmbH (nachfolgend „Anbieter“) und ihren Kunden (nachfolgend
             „Nutzer“), soweit nicht etwas anderes ausdrücklich vereinbart ist.
           </p>
         </div>
@@ -68,7 +68,7 @@ export default function AGBPage() {
           <p>
             Nach der Testphase verlängert sich das Abonnement jeweils um einen weiteren Monat,
             wenn es nicht mit einer Frist von 7 Tagen zum Laufzeitende schriftlich gekündigt wird.
-            Die Kündigung kann per E‑Mail an support@gleno.de erfolgen.
+            Die Kündigung kann per E‑Mail an hey@maklernull.de erfolgen.
           </p>
         </div>
 
