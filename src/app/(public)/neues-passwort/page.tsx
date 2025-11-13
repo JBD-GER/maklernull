@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
@@ -12,7 +12,47 @@ import {
 } from '@heroicons/react/24/outline'
 import { supabaseEphemeral } from '@/lib/supabase-client'
 
+/**
+ * Seite /neues-passwort – wird in eine Suspense-Boundary gepackt,
+ * damit useSearchParams korrekt funktioniert (CSR-Bailout-Error fix).
+ */
 export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="relative min-h-screen overflow-hidden bg-[#020617] px-4 py-16">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -z-10"
+            style={{
+              background:
+                'radial-gradient(700px 500px at 50% 0%, rgba(56,189,248,0.18), transparent),' +
+                'radial-gradient(900px 600px at 0% 100%, rgba(37,99,235,0.25), transparent)',
+            }}
+          />
+          <div className="mx-auto max-w-md rounded-3xl border border-white/15 bg-white/5 p-6 shadow-2xl backdrop-blur-2xl ring-1 ring-white/10 sm:p-8">
+            <h1 className="mb-1 text-center text-2xl font-semibold text-white">
+              Neues Passwort festlegen
+            </h1>
+            <p className="mb-4 text-center text-xs text-white/70">
+              Der Wiederherstellungslink wird überprüft …
+            </p>
+            <div className="flex justify-center">
+              <span className="h-6 w-6 animate-spin rounded-full border border-white/40 border-b-transparent" />
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <ResetPasswordInner />
+    </Suspense>
+  )
+}
+
+/**
+ * Die eigentliche Logik & UI – hier wird useSearchParams verwendet.
+ */
+function ResetPasswordInner() {
   const supabase = supabaseEphemeral() // ephemeraler Client
   const router = useRouter()
   const searchParams = useSearchParams()
