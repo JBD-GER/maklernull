@@ -772,7 +772,7 @@ export default function HomePage() {
           </div>
 
           <h2 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
-            Ihre Vorteile mit Maklernull.de.
+            Ihre Vorteile mit Maklernull.de
           </h2>
           <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600">
             Unser Service verbindet die Reichweite der großen Portale mit der
