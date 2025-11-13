@@ -3,323 +3,185 @@ import { redirect } from 'next/navigation'
 import { supabaseServer } from '@/lib/supabase-server'
 import DashboardClient from './DashboardClient'
 
-type SeriesPoint = { month: string; count: number }
-type RevenuePoint = { month: string; amount: number }
-
-/* ===== Helpers für Datum ===== */
-function ym(d: Date) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` // YYYY-MM
-}
-function firstDayOfMonth(d = new Date()) {
-  const x = new Date(d)
-  x.setDate(1); x.setHours(0, 0, 0, 0)
-  return x
-}
-function startOfDay(d = new Date()) {
-  const x = new Date(d)
-  x.setHours(0, 0, 0, 0)
-  return x
-}
-function endOfDay(d = new Date()) {
-  const x = new Date(d)
-  x.setHours(23, 59, 59, 999)
-  return x
-}
-function lastNMonths(n: number) {
-  const out: string[] = []
-  const d = firstDayOfMonth()
-  for (let i = 0; i < n; i++) {
-    out.unshift(ym(new Date(d)))
-    d.setMonth(d.getMonth() - 1)
-  }
-  return out
-}
-function bucketCountByMonth(dates: string[], months: string[]): SeriesPoint[] {
-  const map = new Map(months.map((m) => [m, 0]))
-  for (const iso of dates) {
-    const key = ym(new Date(iso))
-    if (map.has(key)) map.set(key, (map.get(key) || 0) + 1)
-  }
-  return months.map((m) => ({ month: m, count: map.get(m) || 0 }))
+type Listing = {
+  id: string
+  title: string | null
+  status: string | null
+  created_at: string
+  updated_at: string | null
+  marketed_at?: string | null
 }
 
-/* ===== Zahlen/Positionen robust ===== */
-function num(v: any): number {
-  if (typeof v === 'number') return v
-  if (typeof v === 'string') {
-    const t = v.replace?.(',', '.') ?? v
-    const n = Number(t)
-    return Number.isFinite(n) ? n : 0
-  }
-  return 0
-}
-function parseMaybeJsonArray(val: unknown): any[] {
-  if (Array.isArray(val)) return val
-  if (typeof val === 'string') {
-    try { const a = JSON.parse(val); return Array.isArray(a) ? a : [] } catch { return [] }
-  }
-  return []
-}
-/** Summe einer Zeile (Fallback) */
-function lineTotal(p: any): number {
-  const direct = num(p.total) || num(p.line_total) || num(p.amount) || num(p.subtotal) || 0
-  if (direct) return direct
-  const qty = num(p.quantity ?? p.qty ?? p.q ?? 1)
-  const unit = num(p.unit_price ?? p.price ?? p.unitPrice ?? p.unit ?? 0)
-  const fallback = qty * unit
-  return Number.isFinite(fallback) ? fallback : 0
+type Message = {
+  id: string
+  created_at: string
+  is_read: boolean | null
+  listing_title?: string | null
+  sender_name?: string | null
 }
 
-/* ===== Rabatt-/Netto-Logik (wie Angebot/Rechnung) ===== */
-type DiscountType = 'percent' | 'amount'
-type DiscountBase = 'net' | 'gross'
-type Discount = {
-  enabled: boolean
-  label?: string
-  type: DiscountType
-  base: DiscountBase
-  value: number
-}
-const clamp = (n: number) => (n < 0 ? 0 : n)
-const parseTax = (v: unknown) => {
-  if (typeof v === 'number') return v
-  if (typeof v === 'string') {
-    const n = Number(v.trim().replace(',', '.'))
-    return Number.isFinite(n) ? n : 0
-  }
-  return 0
+/* Kleine Helper */
+function safeStatus(
+  raw: string | null,
+): 'entwurf' | 'aktiv' | 'deaktiviert' | 'vermarktet' | 'unbekannt' {
+  const v = (raw ?? '').toLowerCase()
+  if (v === 'entwurf') return 'entwurf'
+  if (v === 'aktiv') return 'aktiv'
+  if (v === 'deaktiviert') return 'deaktiviert'
+  if (v === 'vermarktet') return 'vermarktet'
+  return 'unbekannt'
 }
 
-type InvoiceLite = {
-  date: string
-  positions: any
-  tax_rate?: number | string | null
-  discount?: Discount | null
-  net_after_discount?: number | null
-}
-
-/** Finale NETTO-Summe nach Rabatt.
- * 1) nutzt DB-Feld `net_after_discount` (falls vorhanden)
- * 2) sonst: berechnet aus positions + discount (+ tax_rate für Basis 'gross')
+/**
+ * Normalisiert einen Namen:
+ * - nimmt nur den Teil vor einem evtl. "@"
+ * - ersetzt ".", "_" und "-" durch Leerzeichen
+ * - macht aus "christoph.pfad" -> "Christoph Pfad"
  */
-function computeNetAfter(inv: InvoiceLite): number {
-  if (typeof inv.net_after_discount === 'number' && isFinite(inv.net_after_discount)) {
-    return inv.net_after_discount
-  }
+function normalizeName(raw: string | null | undefined): string {
+  if (!raw) return ''
+  let s = raw.trim()
+  if (!s) return ''
 
-  const items = parseMaybeJsonArray(inv.positions)
-  const net = items.reduce((acc, it) => acc + lineTotal(it), 0)
+  // Falls doch eine Mail durchrutscht
+  s = s.split('@')[0]
 
-  const d = inv.discount
-  if (!d || !d.enabled || !d.value) return net
+  // Punkte/Unterstriche/Minus in Spaces wandeln
+  s = s.replace(/[._]+/g, ' ').replace(/-+/g, ' ')
 
-  const taxRate = parseTax(inv.tax_rate ?? 0)
-  const taxFactor = 1 + taxRate / 100
+  const parts = s.split(/\s+/).filter(Boolean)
+  if (!parts.length) return ''
 
-  if (d.base === 'net') {
-    const disc = d.type === 'percent' ? (net * d.value) / 100 : d.value
-    const capped = Math.min(Math.max(0, disc), net)
-    return clamp(net - capped)
-  } else {
-    // Rabatt auf Brutto ➜ brutto bilden, Rabatt abziehen, zu netto zurückrechnen
-    const grossBefore = net * taxFactor
-    const disc = d.type === 'percent' ? (grossBefore * d.value) / 100 : d.value
-    const capped = Math.min(Math.max(0, disc), grossBefore)
-    const grossAfter = clamp(grossBefore - capped)
-    return grossAfter / taxFactor
-  }
+  const cased = parts.map((p) => {
+    const lower = p.toLowerCase()
+    return lower.charAt(0).toUpperCase() + lower.slice(1)
+  })
+
+  return cased.join(' ')
 }
 
-/* ===== Umsatz (nur NETTO nach Rabatt) ===== */
-function sumRevenueByMonth(invoices: InvoiceLite[], months: string[]): RevenuePoint[] {
-  const map = new Map(months.map((m) => [m, 0]))
-  for (const inv of invoices) {
-    const key = ym(new Date(inv.date))
-    if (!map.has(key)) continue
-    map.set(key, (map.get(key) || 0) + computeNetAfter(inv))
-  }
-  return months.map((m) => ({ month: m, amount: map.get(m) || 0 }))
-}
-function sumRevenueBetween(invoices: InvoiceLite[], fromIncl: Date, toIncl: Date): number {
-  const from = fromIncl.getTime()
-  const to = toIncl.getTime()
-  let total = 0
-  for (const inv of invoices) {
-    const t = new Date(inv.date).getTime()
-    if (t < from || t > to) continue
-    total += computeNetAfter(inv)
-  }
-  return total
-}
+export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
   const supabase = await supabaseServer()
-  const { data: { user }, error } = await supabase.auth.getUser()
-  if (error || !user) redirect('/login')
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
 
+  if (error || !user) {
+    redirect('/login')
+  }
+
+  // Profil laden
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('company_name, full_name, first_name, last_name')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
-  if (profile?.role === 'mitarbeiter') {
-    return redirect('/dashboard/kalender')
+  const p = profile as any
+
+  // 1) Firma bevorzugen – erst aus profiles, dann aus user_metadata
+  const profileCompany =
+    typeof p?.company_name === 'string' ? p.company_name.trim() : ''
+  const metaCompany =
+    typeof user.user_metadata?.company_name === 'string'
+      ? user.user_metadata.company_name.trim()
+      : ''
+  const company = profileCompany || metaCompany
+
+  let ownerName = ''
+
+  if (company) {
+    // Firma niemals verändern (kein normalizeName)
+    ownerName = company
+  } else {
+    // 2) Vor- & Nachname
+    const firstName =
+      typeof p?.first_name === 'string' ? p.first_name.trim() : ''
+    const lastName =
+      typeof p?.last_name === 'string' ? p.last_name.trim() : ''
+    const combined = [firstName, lastName].filter(Boolean).join(' ').trim()
+
+    if (combined) {
+      ownerName = normalizeName(combined)
+    } else if (typeof p?.full_name === 'string' && p.full_name.trim()) {
+      // 3) full_name aus profiles
+      ownerName = normalizeName(p.full_name)
+    } else if (
+      typeof user.user_metadata?.full_name === 'string' &&
+      user.user_metadata.full_name.trim()
+    ) {
+      // 4) full_name aus user_metadata
+      ownerName = normalizeName(user.user_metadata.full_name)
+    } else if (
+      typeof user.user_metadata?.name === 'string' &&
+      user.user_metadata.name.trim()
+    ) {
+      // 5) name aus user_metadata
+      ownerName = normalizeName(user.user_metadata.name)
+    } else if (user.email) {
+      // 6) Fallback: Mail vor @, z.B. "christoph.pfad" -> "Christoph Pfad"
+      ownerName = normalizeName(user.email)
+    } else {
+      ownerName = 'Willkommen'
+    }
   }
-  const userId = user.id
 
-  // Zeitfenster
-  const months = lastNMonths(12)
-  const today = new Date()
-  const todayIso = today.toISOString().slice(0, 10)
-  const in30Iso = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().slice(0, 10)
+  const ownerId = user.id
 
-  // --- KPIs ---
-  const [{ count: employeesCount }] = await Promise.all([
-    supabase.from('employees').select('id', { count: 'exact', head: true }).eq('user_id', userId),
-  ])
-  const [{ count: customersCount }] = await Promise.all([
-    supabase.from('customers').select('id', { count: 'exact', head: true }).eq('user_id', userId),
-  ])
-  const [{ count: projectsCount }] = await Promise.all([
-    supabase.from('projects').select('id', { count: 'exact', head: true }).eq('user_id', userId),
-  ])
-  const [{ count: invoicesCount }] = await Promise.all([
-    supabase.from('invoices').select('id', { count: 'exact', head: true }).eq('user_id', userId),
-  ])
+  // --- INSERATE ---
+  const listingsRes = await supabase
+    .from('listings')
+    .select('id, title, status, created_at, updated_at, marketed_at')
+    .eq('owner_id', ownerId)
+    .order('created_at', { ascending: false })
 
-  // --- Zeitreihen (Counts) ---
-  const since12m = new Date(firstDayOfMonth())
-  since12m.setMonth(since12m.getMonth() - 11)
-  const since12mIso = since12m.toISOString()
+  const listings = (listingsRes.data ?? []) as Listing[]
 
-  const [customersCreatedRes, projectsCreatedRes] = await Promise.all([
-    supabase.from('customers').select('created_at').eq('user_id', userId).gte('created_at', since12mIso),
-    supabase.from('projects').select('created_at').eq('user_id', userId).gte('created_at', since12mIso),
-  ])
+  const totalListings = listings.length
+  const draft = listings.filter((l) => safeStatus(l.status) === 'entwurf').length
+  const active = listings.filter((l) => safeStatus(l.status) === 'aktiv').length
+  const inactive = listings.filter(
+    (l) => safeStatus(l.status) === 'deaktiviert',
+  ).length
+  const marketed = listings.filter(
+    (l) => safeStatus(l.status) === 'vermarktet',
+  ).length
 
-  const seriesCustomers = bucketCountByMonth(
-    (customersCreatedRes.data ?? []).map((r: any) => r.created_at),
-    months,
-  )
-  const seriesProjects = bucketCountByMonth(
-    (projectsCreatedRes.data ?? []).map((r: any) => r.created_at),
-    months,
-  )
+  const marketingRate =
+    totalListings > 0 ? Math.round((marketed / totalListings) * 100) : 0
 
-  // --- Umsatz (NETTO nach Rabatt) ---
-  const earliestMonthIso = (() => {
-    const [y, m] = months[0].split('-').map((x) => Number(x))
-    const d = new Date(y, m - 1, 1)
-    return d.toISOString().slice(0, 10)
-  })()
+  // --- NACHRICHTEN ---
+  const messagesRes = await supabase
+    .from('messages')
+    .select('id, created_at, is_read, listing_title, sender_name')
+    .eq('owner_id', ownerId)
+    .order('created_at', { ascending: false })
+    .limit(10)
 
-  // Für Chart nur benötigte Felder laden
-  const invoicesForChartRes = await supabase
-    .from('invoices')
-    .select('date, positions, tax_rate, discount, net_after_discount')
-    .eq('user_id', userId)
-    .gte('date', earliestMonthIso)
-
-  const chartInvoices = (invoicesForChartRes.data ?? []) as InvoiceLite[]
-  const revenueByMonth = sumRevenueByMonth(chartInvoices, months)
-
-  // YTD (NETTO nach Rabatt)
-  const startOfYear = new Date(new Date().getFullYear(), 0, 1)
-  const invoicesForYtdRes = await supabase
-    .from('invoices')
-    .select('date, positions, tax_rate, discount, net_after_discount')
-    .eq('user_id', userId)
-    .gte('date', startOfYear.toISOString().slice(0, 10))
-    .lte('date', todayIso)
-
-  const ytdInvoices = (invoicesForYtdRes.data ?? []) as InvoiceLite[]
-  const revenueYTD = sumRevenueBetween(ytdInvoices, startOfYear, endOfDay(today))
-
-  // --- Termine HEUTE ---
-  const todayStart = startOfDay(today)
-  const todayEnd = endOfDay(today)
-  const todaysAppointmentsRes = await supabase
-    .from('appointments')
-    .select('id, title, location, start_time, end_time, reason')
-    .eq('user_id', userId)
-    .gte('start_time', todayStart.toISOString())
-    .lte('start_time', todayEnd.toISOString())
-    .order('start_time', { ascending: true })
-  const todaysAppointments = (todaysAppointmentsRes.data ?? []) as {
-    id: string; title: string | null; location: string; start_time: string; end_time: string | null; reason: string | null
-  }[]
-
-  // --- Warnungen ---
-  const materialsRes = await supabase
-    .from('materials')
-    .select('id, name, quantity, critical_quantity')
-    .eq('user_id', userId)
-  const lowMaterials = ((materialsRes.data ?? []) as any[])
-    .filter((m) => Number(m.quantity) <= Number(m.critical_quantity))
-    .slice(0, 10)
-    .map((m) => ({
-      id: String(m.id),
-      name: String(m.name),
-      quantity: Number(m.quantity),
-      critical_quantity: Number(m.critical_quantity),
-    }))
-
-  const dueRangeStart = todayIso
-  const dueRangeEnd = in30Iso
-
-  // Fleet TÜV
-  const dueFleetRes = await supabase
-    .from('fleet')
-    .select('id, license_plate, inspection_due_date')
-    .eq('user_id', userId)
-    .not('inspection_due_date', 'is', null)
-    .gte('inspection_due_date', dueRangeStart)
-    .lte('inspection_due_date', dueRangeEnd)
-    .order('inspection_due_date', { ascending: true })
-  const dueFleet = (dueFleetRes.data ?? []).map((f: any) => ({
-    id: String(f.id),
-    license_plate: String(f.license_plate),
-    inspection_due_date: f.inspection_due_date as string | null,
-  }))
-
-  // Tools Prüfungen
-  const dueToolsRes = await supabase
-    .from('tools')
-    .select('id, name, next_inspection_due')
-    .eq('user_id', userId)
-    .not('next_inspection_due', 'is', null)
-    .gte('next_inspection_due', dueRangeStart)
-    .lte('next_inspection_due', dueRangeEnd)
-    .order('next_inspection_due', { ascending: true })
-  const dueTools = (dueToolsRes.data ?? []).map((t: any) => ({
-    id: String(t.id),
-    name: String(t.name),
-    next_inspection_due: t.next_inspection_due as string | null,
-  }))
+  const messages = (messagesRes.data ?? []) as Message[]
+  const unreadMessages = messages.filter((m) => !m.is_read).length
 
   return (
-    <div className="px-6 py-6">
+    <div className="px-4 py-6 sm:px-6 lg:px-8">
       <DashboardClient
-        userEmail={user.email ?? ''}
-        kpis={{
-          employees: employeesCount ?? 0,
-          customers: customersCount ?? 0,
-          projects: projectsCount ?? 0,
-          invoices: invoicesCount ?? 0,
-          revenueYTD, // ✅ NETTO nach Rabatt
+        ownerName={ownerName}
+        metrics={{
+          totalListings,
+          draft,
+          active,
+          inactive,
+          marketed,
+          marketingRate,
+          unreadMessages,
         }}
-        series={{
-          customers: seriesCustomers,
-          projects: seriesProjects,
-          revenue: revenueByMonth, // ✅ NETTO nach Rabatt je Monat (letzte 12)
-        }}
-        alerts={{ lowMaterials, dueFleet, dueTools }}
-        appointments={todaysAppointments}
-        contacts={{
-          name: 'Christoph Pfad',
+        listings={listings}
+        messages={messages}
+        contact={{
+          email: 'hey@makelrnull.de',
           phone: '050353169999',
-          email: 'support@gleno.de',
         }}
       />
     </div>

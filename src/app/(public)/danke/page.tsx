@@ -221,7 +221,7 @@ export default function DankePage() {
               <div className="text-base font-medium text-slate-900">3) Loslegen</div>
             </div>
             <p className="mt-2 text-sm text-slate-700">
-              Angebote, Material, Team & Termine – alles an einem Ort.
+              Immobilien Inserieren, Anfragen erhalten & erfolgreich Vermarkten.
             </p>
           </div>
         </div>
@@ -259,7 +259,7 @@ export default function DankePage() {
 
         {/* Fußnote */}
         <p className="mt-8 text-center text-xs text-slate-500">
-          Support: support@gleno.de · +49 5035 3169991
+          Support: hey@maklernull.de · +49 5035 3169999
         </p>
       </div>
     </main>

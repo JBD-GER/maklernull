@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Transition } from '@headlessui/react'
 import {
-  Bars3Icon, XMarkIcon, HomeIcon, ChartPieIcon, Cog6ToothIcon, LifebuoyIcon, PresentationChartBarIcon,
+  Bars3Icon, XMarkIcon, HomeIcon, ChartPieIcon, Cog6ToothIcon, LifebuoyIcon,
 } from '@heroicons/react/24/outline'
 import { supabaseClient } from '@/lib/supabase-client'
 
@@ -17,7 +17,6 @@ const navLinks = [
   { href: '/funktionen', label: 'Funktionen',  icon: Cog6ToothIcon },
   { href: '/preis',      label: 'Preis',       icon: ChartPieIcon },
   { href: '/support',    label: 'Support',     icon: LifebuoyIcon },
-  { href: '/markt',      label: 'Markt',       icon: PresentationChartBarIcon },
 ]
 
 export default function Header() {

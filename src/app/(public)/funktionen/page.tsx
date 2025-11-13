@@ -2,77 +2,61 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import {
-  UserGroupIcon,
   DocumentTextIcon,
-  EnvelopeOpenIcon,
-  CalendarIcon,
-  TruckIcon,
-  ChartBarIcon,
-  ClipboardDocumentCheckIcon,
-  CameraIcon,
   ArrowUpOnSquareStackIcon,
+  EnvelopeOpenIcon,
+  ChartBarIcon,
   ShieldCheckIcon,
-  Cog6ToothIcon,
-  BellAlertIcon,
+  UserGroupIcon,
   CloudArrowUpIcon,
-  CubeTransparentIcon,
-  ClockIcon,
-  UserCircleIcon,
-  PuzzlePieceIcon,
 } from '@heroicons/react/24/outline'
 
 /* ----------------------------- Site/SEO constants ----------------------------- */
-const SITE_NAME = 'GLENO'
+const SITE_NAME = 'Maklernull'
 const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || 'https://gleno.io'
-const PRIMARY = '#111827' // dunkles Anthrazit als CTA-/Brand-Akzent
+  process.env.NEXT_PUBLIC_SITE_URL || 'https://maklernull.de'
+const PRIMARY = '#0a1b40' // dein Maklernull-Blau
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'GLENO - Funktionen',
-    template: '%s | GLENO',
+    default: 'Funktionen – Maklernull',
+    template: '%s | Maklernull',
   },
   description:
-    'GLENO vereint B2B-Marktplatz, CRM, Buchhaltung, Projektführung, Logistik, Personal-Management und Onepager-Website in einer Plattform. KI-optimierte Anfragen, Bewerbungsverfahren, Chat, Dokumente, Angebote, Aufträge, Rechnungen, Zeiterfassung, Fuhrpark, Materialbestand und KI-Rechtstexte – alles an einem Ort.',
+    'Maklernull bündelt Inserats-Verwaltung, Portal-Schnittstellen und Kontaktanfragen in einer Oberfläche. Exposé einmal pflegen, auf mehreren Portalen veröffentlichen und alle Leads zentral im Blick behalten.',
   keywords: [
-    'GLENO',
-    'B2B Marktplatz',
-    'CRM',
-    'Agentursoftware',
-    'Dienstleister Software',
-    'Projektmanagement',
-    'Zeiterfassung',
-    'Fuhrparkverwaltung',
-    'Materialverwaltung',
-    'Onepager Website',
-    'KI Angebote',
-    'Bewertungssystem',
-    'Angebote Rechnungen Auftragsbestaetigungen',
+    'Maklernull',
+    'Immobilien Inserate',
+    'Immobilienportale Schnittstelle',
+    'Immobilien Software Makler',
+    'Kontaktanfragen Immobilien',
+    'Exposé Verwaltung',
+    'Mehrfachinserate Immobilien',
   ],
   alternates: { canonical: `${SITE_URL}/features` },
   openGraph: {
     type: 'website',
     url: `${SITE_URL}/features`,
     siteName: SITE_NAME,
-    title: 'Features – GLENO',
+    title: 'Funktionen – Maklernull',
     description:
-      'Marktplatz, CRM & Website in einem System: KI-optimierte Anfragen, Bewerbungsverfahren, Bewertungen, Chat, Dokumente, Angebot, Auftrag & Rechnung, Projektführung, Logistik, Personal & Onepager-Website.',
+      'Inserate einmal anlegen, auf mehreren Portalen veröffentlichen und alle Kontaktanfragen zentral verwalten – das sind die Kernfunktionen von Maklernull.',
     images: [
       {
         url: `${SITE_URL}/og/og-features.jpg`,
         width: 1200,
         height: 630,
-        alt: 'Features – GLENO',
+        alt: 'Funktionen – Maklernull',
       },
     ],
     locale: 'de_DE',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Features – GLENO',
+    title: 'Funktionen – Maklernull',
     description:
-      'GLENO bündelt Marktplatz, CRM, Buchhaltung, Logistik, Personal, Projektführung & Onepager-Website – inklusive KI-Features und Bewertungssystem.',
+      'Maklernull vereinfacht Ihren Inserats-Alltag: zentrale Exposé-Verwaltung, Portal-Sync und einheitlicher Überblick über alle Leads.',
     images: [`${SITE_URL}/og/og-features.jpg`],
   },
   robots: { index: true, follow: true },
@@ -85,20 +69,20 @@ function JsonLd() {
     '@graph': [
       {
         '@type': 'SoftwareApplication',
-        name: 'GLENO',
+        name: 'Maklernull',
         applicationCategory: 'BusinessApplication',
         operatingSystem: 'Web',
         url: `${SITE_URL}/features`,
         image: `${SITE_URL}/og/og-features.jpg`,
         description:
-          'GLENO kombiniert B2B-Marktplatz, CRM, Buchhaltung, Projektführung, Logistik, Personal-Management und Website-Builder für Agenturen & Dienstleister in einer Plattform.',
+          'Maklernull ist die schlanke Webanwendung für Immobilienmakler: Zentrale Inserats-Verwaltung, Portal-Schnittstellen und Kontaktanfragen in einer Oberfläche.',
         offers: {
           '@type': 'Offer',
           price: '0.00',
           priceCurrency: 'EUR',
           description:
-            'Jetzt kostenlos starten und GLENO testen. Flexible Pakete für Agenturen & Dienstleister.',
-          url: `${SITE_URL}/signup`,
+            'Maklernull unverbindlich kennenlernen und für Ihr Maklerbüro testen.',
+          url: `${SITE_URL}/kontakt`,
         },
         publisher: {
           '@type': 'Organization',
@@ -113,7 +97,7 @@ function JsonLd() {
           {
             '@type': 'ListItem',
             position: 2,
-            name: 'Features',
+            name: 'Funktionen',
             item: `${SITE_URL}/features`,
           },
         ],
@@ -150,6 +134,7 @@ export default function FeaturesPage() {
       <div className="space-y-20">
         {/* HERO */}
         <section className="relative overflow-visible">
+          {/* Hintergrund-Glow */}
           <div
             aria-hidden
             className="pointer-events-none absolute left-1/2 top-[-30vh] -z-10 h-[120vh] w-[180vw] -translate-x-1/2"
@@ -165,7 +150,7 @@ export default function FeaturesPage() {
             className="pointer-events-none absolute -left-14 -top-10 -z-10 h-[26rem] w-[26rem] rounded-full"
             style={{
               background:
-                'radial-gradient(closest-side, rgba(17,24,39,.18), rgba(17,24,39,0))',
+                'radial-gradient(closest-side, rgba(10,27,64,.22), rgba(10,27,64,0))',
               filter: 'blur(22px)',
               animation: 'floatGlow 18s ease-in-out infinite',
             }}
@@ -178,34 +163,33 @@ export default function FeaturesPage() {
                   className="rounded-full px-2 py-0.5 text-white"
                   style={{ backgroundColor: PRIMARY }}
                 >
-                  Marktplatz • CRM • Buchhaltung • Website
+                  Inserate • Portale • Kontaktanfragen
                 </span>
                 <span className="text-slate-400">•</span>
-                <span>eine Plattform – kein Tool-Chaos</span>
+                <span>alles an einem Ort – speziell für Makler</span>
               </div>
 
               <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-                Alle Funktionen von <span className="whitespace-nowrap">GLENO</span> im Überblick
+                Was Maklernull in Ihrem Alltag übernimmt.
               </h1>
               <p className="mx-auto mt-3 max-w-3xl text-sm sm:text-base leading-relaxed text-slate-700">
-                GLENO strukturiert Ihren kompletten Ablauf: KI-optimierte Anfragen im Marktplatz,
-                Bewerbungsverfahren & Bewertungen, CRM mit Angeboten, Auftragsbestätigungen,
-                Rechnungen, Projektführung, Zeiterfassung, Logistik & Personal – plus ein
-                angebundener Onepager mit Formularen direkt im System. Jede Information nur einmal,
-                immer am richtigen Vorgang.
+                Maklernull nimmt Ihnen Routinen ab: Sie pflegen ein Exposé zentral,
+                veröffentlichen die Immobilie auf mehreren Portalen und behalten alle
+                Kontaktanfragen in einer Oberfläche im Blick – ohne Tabellen, ohne
+                Portal-Springen.
               </p>
 
               <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
                 <Link
-                  href="/signup"
+                  href="/kontakt"
                   className="inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow transition sm:w-auto"
                   style={{
                     backgroundColor: PRIMARY,
                     boxShadow:
-                      '0 6px 22px rgba(17,24,39,.25), inset 0 1px 0 rgba(255,255,255,.16)',
+                      '0 6px 22px rgba(10,27,64,.25), inset 0 1px 0 rgba(255,255,255,.16)',
                   }}
                 >
-                  Kostenlos testen
+                  Beratung zu Maklernull anfragen
                   <svg
                     width="16"
                     height="16"
@@ -221,12 +205,12 @@ export default function FeaturesPage() {
                   href="/demo"
                   className="inline-flex w-full items-center justify-center rounded-full border border-white/60 bg-white/90 px-6 py-3 text-sm font-semibold text-slate-900 ring-1 ring-white/60 backdrop-blur hover:bg-white sm:w-auto"
                 >
-                  Live-Demo buchen
+                  Live-Demo ansehen
                 </Link>
               </div>
 
               <p className="mt-3 text-[10px] text-slate-500">
-                DSGVO-orientiert • EU-Hosting • Für Agenturen & Dienstleister entwickelt
+                Fokus auf das Wesentliche • EU-Hosting • Für Immobilienmakler entwickelt
               </p>
             </div>
           </div>
@@ -241,297 +225,269 @@ export default function FeaturesPage() {
           />
         </section>
 
-        {/* 3-SÄULEN-ÜBERSICHT */}
+        {/* 3 KERNBEREICHE */}
         <section className="mx-auto max-w-6xl px-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {/* MARKT */}
             <div className="rounded-2xl border border-white/60 bg-white/80 p-4 backdrop-blur-xl shadow-[0_8px_26px_rgba(15,23,42,0.06)]">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                Säule 1
+                Bereich 1
               </p>
               <h3 className="mt-1 text-sm font-semibold text-slate-900">
-                Marktplatz & Anfragen
+                Inserate & Exposés
               </h3>
               <p className="mt-1 text-xs text-slate-700">
-                KI-optimierte Anfragen, Bewerbungsverfahren, Konsument entscheidet,
-                Register & Bewertungen – alles im gleichen Vorgang.
+                Stammdaten, Bilder und Texte nur einmal pflegen – Exposé steht überall
+                identisch zur Verfügung.
               </p>
             </div>
-            {/* CRM */}
+
             <div className="rounded-2xl border border-white/60 bg-white/80 p-4 backdrop-blur-xl shadow-[0_8px_26px_rgba(15,23,42,0.06)]">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                Säule 2
+                Bereich 2
               </p>
               <h3 className="mt-1 text-sm font-semibold text-slate-900">
-                CRM, Buchhaltung & Operations
+                Portal-Schnittstellen
               </h3>
               <p className="mt-1 text-xs text-slate-700">
-                Angebote, Auftragsbestätigungen, Rechnungen, Projekte, Kalender,
-                Zeiterfassung, Personal, Logistik & Dokumentation in einem System.
+                Ihre Immobilie auf mehreren Portalen gleichzeitig – ohne alles mehrfach
+                anzulegen.
               </p>
             </div>
-            {/* WEBSITE */}
+
             <div className="rounded-2xl border border-white/60 bg-white/80 p-4 backdrop-blur-xl shadow-[0_8px_26px_rgba(15,23,42,0.06)]">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                Säule 3
+                Bereich 3
               </p>
               <h3 className="mt-1 text-sm font-semibold text-slate-900">
-                Onepager-Website & Rechtstexte
+                Kontaktanfragen & Überblick
               </h3>
               <p className="mt-1 text-xs text-slate-700">
-                Onepager mit Formularen direkt ins CRM, eigenem Branding sowie
-                KI-gestütztem Impressum & Datenschutz.
+                Alle Leads laufen an einem Ort zusammen – nachvollziehbar, pro Objekt
+                und Portal getrennt.
               </p>
             </div>
           </div>
         </section>
 
-        {/* 1) MARKTPLATZ & ANFRAGEN */}
-        <section id="market" className="mx-auto max-w-6xl px-6">
-          <div className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-[0_10px_34px_rgba(15,23,42,0.06)] backdrop-blur-xl ring-1 ring-white/60">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="inline-flex rounded-2xl border border-white/60 bg-white/95 p-2 ring-1 ring-white/60">
-                <PuzzlePieceIcon className="h-5 w-5 text-slate-900" />
-              </div>
-              <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-slate-900">
-                Marktplatz & KI-optimierte Anfragen
-              </h2>
-            </div>
-            <p className="text-sm leading-relaxed text-slate-700">
-              GLENO verbindet Nachfrage und Angebot in einem klar strukturierten Prozess:
-              Anfragen werden per KI aufbereitet, Dienstleister bewerben sich sauber,
-              Konsumenten wählen fundiert – und alles bleibt an einem Vorgang.
-            </p>
-            <ul className="mt-3 grid grid-cols-1 gap-1.5 text-[12px] text-slate-700 sm:grid-cols-2">
-              <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>KI-optimierte Anfragen mit klaren Datenfeldern statt Freitext-Chaos.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>Strukturiertes Bewerbungsverfahren für Dienstleister je Anfrage.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>Konsument entscheidet transparent auf Basis vergleichbarer Angebote.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>Chat, Dokumente, Angebot, Auftrag & Rechnung direkt an der Anfrage.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>Öffentliches Register mit Profilen und Leistungsdarstellung.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>Bewertungssystem nach Abschluss für echte Qualitätssignale.</span>
-              </li>
-            </ul>
-          </div>
-        </section>
-
-        {/* 2) CRM, BUCHHALTUNG, TEAM, LOGISTIK */}
-        <section id="crm" className="mx-auto max-w-6xl px-6 space-y-6">
-          {/* CRM & Doku */}
-          <div className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-[0_10px_34px_rgba(15,23,42,0.06)] backdrop-blur-xl ring-1 ring-white/60">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="inline-flex rounded-2xl border border-white/60 bg-white/95 p-2 ring-1 ring-white/60">
-                <UserGroupIcon className="h-5 w-5 text-slate-900" />
-              </div>
-              <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-slate-900">
-                CRM & zentrale Vorgangsorganisation
-              </h2>
-            </div>
-            <p className="text-sm leading-relaxed text-slate-700">
-              Alle Anfragen, Projekte und Beziehungen laufen in einem CRM zusammen.
-              Kein Springen zwischen Tools – jeder Vorgang ist vollständig dokumentiert.
-            </p>
-            <ul className="mt-3 grid grid-cols-1 gap-1.5 text-[12px] text-slate-700 sm:grid-cols-2">
-              <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>Zentrales CRM für Kunden & Organisationen inkl. Historie.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>Vorgänge mit Chat, Dateien, Notizen, Status & Verantwortlichen.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>Projektführung inkl. Dokumentation direkt am Vorgang.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>Terminkalender-Anbindung pro Vorgang (z. B. Start, Abgaben, Meetings).</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>Template-Bibliothek für wiederkehrende Positionen & Texte.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>Vorlagenorganisation für einheitliche Angebote & Dokumente.</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Buchhaltung */}
+        {/* 1) INSERATE & EXPOSÉS */}
+        <section id="inserate" className="mx-auto max-w-6xl px-6">
           <div className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-[0_10px_34px_rgba(15,23,42,0.06)] backdrop-blur-xl ring-1 ring-white/60">
             <div className="mb-3 flex items-center gap-3">
               <div className="inline-flex rounded-2xl border border-white/60 bg-white/95 p-2 ring-1 ring-white/60">
                 <DocumentTextIcon className="h-5 w-5 text-slate-900" />
               </div>
-              <h3 className="text-lg font-semibold tracking-tight text-slate-900">
-                Angebot, Auftragsbestätigung & Rechnung – entlang eines Vorgangs
-              </h3>
-            </div>
-            <p className="text-sm leading-relaxed text-slate-700">
-              Dokumente entstehen direkt aus den vorhandenen Daten. Aus einer Anfrage
-              wird ein Angebot, daraus die Auftragsbestätigung und schließlich die Rechnung –
-              ohne Medienbruch.
-            </p>
-            <ul className="mt-3 grid grid-cols-1 gap-1.5 text-[12px] text-slate-700 sm:grid-cols-2">
-              <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>Strukturierte Angebote mit Positionen & hinterlegten Templates.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>Auftragsbestätigung per Klick aus dem Angebot.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>Rechnung aus Auftrag/Angebot – mit sauberer Verknüpfung.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>PDF-Erzeugung & Versand per E-Mail mit vorbereiteten Texten.</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Team & Zeit */}
-          <div className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-[0_10px_34px_rgba(15,23,42,0.06)] backdrop-blur-xl ring-1 ring-white/60">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="inline-flex rounded-2xl border border-white/60 bg-white/95 p-2 ring-1 ring-white/60">
-                <UserCircleIcon className="h-5 w-5 text-slate-900" />
-              </div>
-              <h3 className="text-lg font-semibold tracking-tight text-slate-900">
-                Personal, Mitarbeiterzugänge & Zeiterfassung
-              </h3>
-            </div>
-            <p className="text-sm leading-relaxed text-slate-700">
-              Mitarbeitende arbeiten in fokussierten Oberflächen. Zeiten landen direkt an
-              Projekten und Vorgängen – nachvollziehbar und mobilfähig.
-            </p>
-            <ul className="mt-3 grid grid-cols-1 gap-1.5 text-[12px] text-slate-700 sm:grid-cols-2">
-              <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>Mitarbeiterzugänge mit klar definierten Berechtigungen.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>Zeiterfassung pro Projekt, Vorgang oder Tätigkeit.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>Mobile Nutzung auf Smartphone & Tablet für das operative Team.</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Logistik */}
-          <div className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-[0_10px_34px_rgba(15,23,42,0.06)] backdrop-blur-xl ring-1 ring-white/60">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="inline-flex rounded-2xl border border-white/60 bg-white/95 p-2 ring-1 ring-white/60">
-                <TruckIcon className="h-5 w-5 text-slate-900" />
-              </div>
-              <h3 className="text-lg font-semibold tracking-tight text-slate-900">
-                Logistik: Fuhrpark, Werkzeuge & Materialbestand
-              </h3>
-            </div>
-            <p className="text-sm leading-relaxed text-slate-700">
-              Logistik wird Teil der Organisation: Fahrzeuge, Werkzeuge und Materialien
-              lassen sich Vorgängen zuordnen und strukturiert überblicken.
-            </p>
-            <ul className="mt-3 grid grid-cols-1 gap-1.5 text-[12px] text-slate-700 sm:grid-cols-2">
-              <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>Fuhrparkübersicht mit Zuordnung zu Projekten.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>Werkzeuge & Geräte je Vorgang nachvollziehbar hinterlegt.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>Materialbestände sichtbar – Basis für geordnete Abwicklung.</span>
-              </li>
-            </ul>
-          </div>
-        </section>
-
-        {/* 3) WEBSITE & RECHTTEXTE */}
-        <section id="website" className="mx-auto max-w-6xl px-6">
-          <div className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-[0_12px_38px_rgba(15,23,42,0.08)] backdrop-blur-xl ring-1 ring-white/60">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="inline-flex rounded-2xl border border-white/60 bg-white/95 p-2 ring-1 ring-white/60">
-                <CloudArrowUpIcon className="h-5 w-5 text-slate-900" />
-              </div>
               <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-slate-900">
-                Onepager-Website direkt mit GLENO verbunden
+                Inserate & Exposés zentral verwalten
               </h2>
             </div>
             <p className="text-sm leading-relaxed text-slate-700">
-              Die Website ist kein Fremdkörper, sondern Teil Ihres Systems: Anfragen
-              aus Formularen landen automatisch dort, wo sie hingehören – im CRM.
+              Statt jedes Portal einzeln zu pflegen, verwalten Sie Ihre Immobilie in
+              Maklernull: Objektstammdaten, Bilder, Texte und Ausstattungsmerkmale
+              werden sauber strukturiert und können von dort aus in die Portale
+              ausgespielt werden.
             </p>
             <ul className="mt-3 grid grid-cols-1 gap-1.5 text-[12px] text-slate-700 sm:grid-cols-2">
               <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>Schlanker Onepager speziell für Dienstleister & Agenturen.</span>
+                <span
+                  className="mt-1 h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: PRIMARY }}
+                />
+                <span>Zentrales Exposé pro Immobilie – Stammdaten, Flächen, Preise, Energieausweis.</span>
               </li>
               <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>Kontakt- und Projektformulare schreiben direkt ins CRM.</span>
+                <span
+                  className="mt-1 h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: PRIMARY }}
+                />
+                <span>Bildverwaltung mit Reihenfolge, Titeln und Auswahl für Vorschau-Bilder.</span>
               </li>
               <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>Eigenes Logo, Farben & Inhalte für konsistentes Branding.</span>
+                <span
+                  className="mt-1 h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: PRIMARY }}
+                />
+                <span>Exposé-Texte einmal formulieren – in allen angebundenen Portalen identisch.</span>
               </li>
               <li className="flex gap-2">
-                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRIMARY }} />
-                <span>KI-gestützte Erstellung von Impressum & Datenschutzerklärung.</span>
+                <span
+                  className="mt-1 h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: PRIMARY }}
+                />
+                <span>Objektstatus (aktiv, pausiert, reserviert, verkauft / vermietet) klar sichtbar.</span>
               </li>
             </ul>
           </div>
         </section>
 
-        {/* SEO / WHY BLOCK – ABSCHLUSS */}
+        {/* 2) PORTAL-SCHNITTSTELLEN */}
+        <section id="portale" className="mx-auto max-w-6xl px-6">
+          <div className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-[0_10px_34px_rgba(15,23,42,0.06)] backdrop-blur-xl ring-1 ring-white/60">
+            <div className="mb-3 flex items-center gap-3">
+              <div className="inline-flex rounded-2xl border border-white/60 bg-white/95 p-2 ring-1 ring-white/60">
+                <ArrowUpOnSquareStackIcon className="h-5 w-5 text-slate-900" />
+              </div>
+              <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-slate-900">
+                Portal-Schnittstellen & Veröffentlichung
+              </h2>
+            </div>
+            <p className="text-sm leading-relaxed text-slate-700">
+              Maklernull wird zur Zentrale zwischen Ihrem Bestand und den
+              Immobilienportalen. Sie entscheiden pro Objekt, auf welchen Portalen
+              es erscheinen soll – Maklernull kümmert sich um die Übertragung.
+            </p>
+            <ul className="mt-3 grid grid-cols-1 gap-1.5 text-[12px] text-slate-700 sm:grid-cols-2">
+              <li className="flex gap-2">
+                <span
+                  className="mt-1 h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: PRIMARY }}
+                />
+                <span>
+                  Portalauswahl direkt am Objekt (z.&nbsp;B. Immobilienscout24, Immowelt, Kleinanzeigen*).
+                </span>
+              </li>
+              <li className="flex gap-2">
+                <span
+                  className="mt-1 h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: PRIMARY }}
+                />
+                <span>Einmal veröffentlichen – Maklernull übernimmt den Abgleich mit den Portalen.</span>
+              </li>
+              <li className="flex gap-2">
+                <span
+                  className="mt-1 h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: PRIMARY }}
+                />
+                <span>Status-Anzeige: pro Portal sehen, ob das Inserat aktiv, pausiert oder fehlerhaft ist.</span>
+              </li>
+              <li className="flex gap-2">
+                <span
+                  className="mt-1 h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: PRIMARY }}
+                />
+                <span>Änderungen am Exposé werden synchron übernommen – ohne alles doppelt einzupflegen.</span>
+              </li>
+            </ul>
+
+            <p className="mt-3 text-[11px] text-slate-500">
+              * Die konkrete Liste angebundener Portale hängt von Ihrer individuellen Konfiguration ab.
+            </p>
+          </div>
+        </section>
+
+        {/* 3) KONTAKTANFRAGEN & ÜBERBLICK */}
+        <section id="kontakte" className="mx-auto max-w-6xl px-6 space-y-6">
+          {/* Leads & Kontaktanfragen */}
+          <div className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-[0_10px_34px_rgba(15,23,42,0.06)] backdrop-blur-xl ring-1 ring-white/60">
+            <div className="mb-3 flex items-center gap-3">
+              <div className="inline-flex rounded-2xl border border-white/60 bg-white/95 p-2 ring-1 ring-white/60">
+                <EnvelopeOpenIcon className="h-5 w-5 text-slate-900" />
+              </div>
+              <h3 className="text-lg font-semibold tracking-tight text-slate-900">
+                Kontaktanfragen zentral bündeln
+              </h3>
+            </div>
+            <p className="text-sm leading-relaxed text-slate-700">
+              Egal, ob die Anfrage über Portal A, Portal B oder Ihre eigene Website
+              kommt: Sie landet in Maklernull – direkt am passenden Objekt, inklusive
+              Quelle und Zeitstempel.
+            </p>
+            <ul className="mt-3 grid grid-cols-1 gap-1.5 text-[12px] text-slate-700 sm:grid-cols-2">
+              <li className="flex gap-2">
+                <span
+                  className="mt-1 h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: PRIMARY }}
+                />
+                <span>Alle Leads in einem Posteingang – nach Objekt und Portal filterbar.</span>
+              </li>
+              <li className="flex gap-2">
+                <span
+                  className="mt-1 h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: PRIMARY }}
+                />
+                <span>Kontaktkarte mit Name, E-Mail, Telefon und Nachricht des Interessenten.</span>
+              </li>
+              <li className="flex gap-2">
+                <span
+                  className="mt-1 h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: PRIMARY }}
+                />
+                <span>Zuordnung zu Mitarbeitenden (wer ruft wen wann zurück?).</span>
+              </li>
+              <li className="flex gap-2">
+                <span
+                  className="mt-1 h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: PRIMARY }}
+                />
+                <span>Notizen & Status (offen, in Bearbeitung, besichtigt, abgeschlossen).</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Überblick & Basis-Reporting */}
+          <div className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-[0_10px_34px_rgba(15,23,42,0.06)] backdrop-blur-xl ring-1 ring-white/60">
+            <div className="mb-3 flex items-center gap-3">
+              <div className="inline-flex rounded-2xl border border-white/60 bg-white/95 p-2 ring-1 ring-white/60">
+                <ChartBarIcon className="h-5 w-5 text-slate-900" />
+              </div>
+              <h3 className="text-lg font-semibold tracking-tight text-slate-900">
+                Überblick behalten, ohne sich zu verlieren
+              </h3>
+            </div>
+            <p className="text-sm leading-relaxed text-slate-700">
+              Sie sehen auf einen Blick, welche Objekte gut laufen, wo wenig passiert
+              und welche Portale die meisten Leads bringen – ohne komplizierte
+              Statistik-Welt.
+            </p>
+            <ul className="mt-3 grid grid-cols-1 gap-1.5 text-[12px] text-slate-700 sm:grid-cols-2">
+              <li className="flex gap-2">
+                <span
+                  className="mt-1 h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: PRIMARY }}
+                />
+                <span>Basis-Auswertung: Kontaktanfragen pro Objekt und pro Portal.</span>
+              </li>
+              <li className="flex gap-2">
+                <span
+                  className="mt-1 h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: PRIMARY }}
+                />
+                <span>Erkennen, welche Kanäle für Ihr Büro wirklich funktionieren.</span>
+              </li>
+              <li className="flex gap-2">
+                <span
+                  className="mt-1 h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: PRIMARY }}
+                />
+                <span>Filter nach Zeitraum, Objektstatus und Portal möglich.</span>
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        {/* WHY BLOCK – ABSCHLUSS */}
         <section className="mx-auto max-w-6xl px-6 pb-20">
           <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-            Warum GLENO die logische Mitte zwischen Marktplatz, CRM & Website ist.
+            Warum Maklernull – obwohl es bewusst “weniger” kann.
           </h2>
           <div className="mt-3 space-y-3 text-sm leading-relaxed text-slate-700">
             <p>
-              Normalerweise existieren Anfragen, Angebote, Projekte, Zeiten, Material,
-              Personal und Website völlig getrennt. GLENO führt diese Bereiche zusammen:
-              Marktplatz, CRM, Buchhaltung, Logistik, Personal und Onepager-Website greifen
-              ineinander – jede Information hängt an einem Vorgang.
+              Viele Systeme wollen alles gleichzeitig: komplette ERP-Lösungen, CRM,
+              Terminplanung, Aufgaben, E-Mail, Telefonie und mehr. Maklernull
+              konzentriert sich bewusst auf den Kern: Inserate, Portale und
+              Kontaktanfragen – genau dort, wo im Alltag die meiste Routinearbeit
+              entsteht.
             </p>
             <p>
-              Die drei Säulen sind klar abgegrenzt und technisch verbunden: Der
-              <strong> Marktplatz</strong> liefert strukturierte, KI-optimierte Anfragen
-              mit fairem Bewerbungsverfahren und Bewertungen. Das
-              <strong> CRM & Operations</strong>-Modul bildet Angebote, Auftragsbestätigungen,
-              Rechnungen, Projektführung, Zeiterfassung sowie Fuhrpark-, Werkzeug- und
-              Materialorganisation ab. Die <strong>Onepager-Website</strong> sendet
-              Anfragen direkt ins System und lässt sich mit KI bei Rechtstexten unterstützen.
+              Sie pflegen jede Immobilie nur einmal, entscheiden, auf welchen Portalen
+              sie erscheinen soll, und sehen alle Leads in einer Oberfläche. Keine
+              Excel-Listen, kein mehrmaliges Einpflegen, kein Wechseln zwischen fünf
+              Portalen, nur um den Überblick zu behalten.
             </p>
             <p>
-              So entsteht eine durchgehende Prozesskette für Agenturen & Dienstleister,
-              die Wert auf Struktur, Nachvollziehbarkeit und professionelle Außenwirkung
-              legen – ohne Spielerei, ohne Tool-Wirrwarr.
+              Maklernull ist damit die schlanke Schaltzentrale zwischen Ihrem
+              Maklerbüro und den Immobilienportalen – mit genug Struktur, um Ruhe in
+              den Alltag zu bringen, aber ohne die Komplexität einer überladenen
+              All-in-One-Lösung.
             </p>
           </div>
         </section>

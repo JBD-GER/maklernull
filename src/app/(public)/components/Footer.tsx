@@ -18,16 +18,17 @@ export default function Footer() {
               <div className="-mt-0.5 mb-1">
                 <Image
                   src="/logo.png"
-                  alt="GLENO"
-                  width={100}
-                  height={30}
-                  className="h-auto w-auto max-w-[150px] object-contain"
+                  alt="Maklernull"
+                  width={120}
+                  height={32}
+                  className="h-auto w-auto max-w-[160px] object-contain"
                   priority
                 />
               </div>
               <p className="mt-1 text-sm leading-relaxed text-slate-700">
-                GLENO vereint Marktplatz, CRM und Website in einer Plattform.
-                Ein Login. Ein Preis. Alles drin – für moderne Dienstleister, Agenturen & Unternehmen.
+                Maklernull unterstützt Sie beim Verkauf und bei der Vermietung Ihrer
+                Immobilie – mit Inseraten auf führenden Portalen, Exposé-Erstellung,
+                geprüften Anfragen und persönlicher Betreuung, ganz ohne Maklerprovision.
               </p>
             </div>
 
@@ -42,12 +43,17 @@ export default function Footer() {
                 </li>
                 <li>
                   <Link href="/funktionen" className="text-slate-700 hover:text-slate-900">
-                    Funktionen
+                    Leistungen
                   </Link>
                 </li>
                 <li>
                   <Link href="/preis" className="text-slate-700 hover:text-slate-900">
-                    Preis
+                    Preise &amp; Pakete
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/docs" className="text-slate-700 hover:text-slate-900">
+                    Hilfe &amp; Dokumentation
                   </Link>
                 </li>
                 <li>
@@ -65,30 +71,30 @@ export default function Footer() {
                 <li className="flex items-center gap-2">
                   <PhoneIcon className="h-5 w-5 text-slate-400" />
                   <a
-                    href="tel:+4950353169991"
+                    href="tel:+4950353169999"
                     className="hover:text-slate-900"
                   >
-                    +49 5035 3169991
+                    +49 5035 3169999
                   </a>
                 </li>
                 <li className="flex items-center gap-2">
                   <EnvelopeIcon className="h-5 w-5 text-slate-400" />
                   <a
-                    href="mailto:support@gleno.de"
+                    href="mailto:hey@maklernull.de"
                     className="hover:text-slate-900"
                   >
-                    support@gleno.de
+                    hey@maklernull.de
                   </a>
                 </li>
                 <li className="flex items-center gap-2">
                   <GlobeAltIcon className="h-5 w-5 text-slate-400" />
                   <a
-                    href="https://www.gleno.de"
+                    href="https://www.maklernull.de"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:text-slate-900"
                   >
-                    www.gleno.de
+                    www.maklernull.de
                   </a>
                 </li>
               </ul>
@@ -118,8 +124,8 @@ export default function Footer() {
           </div>
 
           {/* Bottom bar */}
-          <div className="mt-6 rounded-2xl border border-white/70 bg-white/80 px-4 py-3.5 text-xs sm:text-sm text-slate-500 backdrop-blur-xl ring-1 ring-white/70 shadow-[0_1px_6px_rgba(2,6,23,0.03)] flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p>© {year} GLENO. Alle Rechte vorbehalten.</p>
+          <div className="mt-6 flex flex-col gap-2 rounded-2xl border border-white/70 bg-white/80 px-4 py-3.5 text-xs text-slate-500 shadow-[0_1px_6px_rgba(2,6,23,0.03)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:text-sm">
+            <p>© {year} Maklernull. Alle Rechte vorbehalten.</p>
           </div>
         </div>
       </footer>

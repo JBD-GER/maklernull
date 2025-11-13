@@ -73,6 +73,18 @@ const NAV_ITEMS: NavItem[] = [
     href: '/dashboard/einstellung',
     label: 'Einstellung',
     icon: Cog6ToothIcon,
+    children: [
+      {
+        href: '/dashboard/einstellung/',
+        label: 'Konto',
+        icon: Cog6ToothIcon,
+      },
+      {
+        href: '/dashboard/einstellung/buchungen',
+        label: 'Buchungen',
+        icon: Cog6ToothIcon,
+      },
+    ],
   },
 ]
 

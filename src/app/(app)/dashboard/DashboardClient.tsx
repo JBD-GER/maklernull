@@ -1,428 +1,609 @@
+// app/(app)/dashboard/DashboardClient.tsx
 'use client'
 
-import { useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
 import Link from 'next/link'
 import {
-  UserGroupIcon,
-  BriefcaseIcon,
-  DocumentChartBarIcon,
-  PhoneIcon,
-  EnvelopeIcon,
-  CalendarDaysIcon,
-  BanknotesIcon,
+  HomeModernIcon,
+  ChatBubbleOvalLeftEllipsisIcon,
+  PlusIcon,
+  EnvelopeOpenIcon,
+  BoltIcon,
+  ArrowTopRightOnSquareIcon,
 } from '@heroicons/react/24/outline'
-import {
-  Chart as ChartJS,
-  CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler, Chart,
-} from 'chart.js'
-import { Line, Bar } from 'react-chartjs-2'
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler)
+type ListingStatus = 'entwurf' | 'aktiv' | 'deaktiviert' | 'vermarktet' | 'unbekannt'
 
-/* ---------------------- Fancy Chart Plugin: Soft Shadows ---------------------- */
-const shadowPlugin = {
-  id: 'softShadow',
-  beforeDatasetDraw(chart: Chart, args: any) {
-    const { ctx } = chart
-    if (args?.meta?.type === 'line') {
-      ctx.save()
-      ctx.shadowColor = 'rgba(15, 23, 42, 0.25)' // slate-900/25
-      ctx.shadowBlur = 12
-      ctx.shadowOffsetX = 0
-      ctx.shadowOffsetY = 8
-    }
-  },
-  afterDatasetDraw(chart: Chart) {
-    chart.ctx.restore()
-  },
+type Listing = {
+  id: string
+  title: string | null
+  status: string | null
+  created_at: string
+  updated_at: string | null
+  marketed_at?: string | null
 }
-ChartJS.register(shadowPlugin)
 
-/* ---------------------- Typen ---------------------- */
-type SeriesPoint = { month: string; count: number }
-type RevenuePoint = { month: string; amount: number }
+type Message = {
+  id: string
+  created_at: string
+  is_read: boolean | null
+  listing_title?: string | null
+  sender_name?: string | null
+}
+
+type Metrics = {
+  totalListings: number
+  draft: number
+  active: number
+  inactive: number
+  marketed: number
+  marketingRate: number
+  unreadMessages: number
+}
+
+type Props = {
+  ownerName: string
+  metrics: Metrics
+  listings: Listing[]
+  messages: Message[]
+  contact: { email: string; phone: string }
+}
+
+/* Helper */
+function formatDate(dateStr?: string | null) {
+  if (!dateStr) return '—'
+  const d = new Date(dateStr)
+  if (Number.isNaN(d.getTime())) return '—'
+  return new Intl.DateTimeFormat('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(d)
+}
+
+function niceStatus(raw: string | null): { label: string; color: string; dot: string } {
+  const v = (raw ?? '').toLowerCase() as ListingStatus
+
+  switch (v) {
+    case 'entwurf':
+      return {
+        label: 'Entwurf',
+        color: 'bg-slate-50 text-slate-800 border-slate-200 ring-slate-200/60',
+        dot: 'bg-slate-400',
+      }
+    case 'aktiv':
+      return {
+        label: 'Aktiv',
+        color: 'bg-emerald-50 text-emerald-800 border-emerald-200 ring-emerald-200/70',
+        dot: 'bg-emerald-500',
+      }
+    case 'deaktiviert':
+      return {
+        label: 'Deaktiviert',
+        color: 'bg-slate-50 text-slate-700 border-slate-200 ring-slate-200/60',
+        dot: 'bg-slate-500',
+      }
+    case 'vermarktet':
+      return {
+        label: 'Vermarktet',
+        color: 'bg-slate-900 text-slate-50 border-slate-900 ring-slate-900/60',
+        dot: 'bg-slate-200',
+      }
+    default:
+      return {
+        label: 'Unbekannt',
+        color: 'bg-slate-50 text-slate-700 border-slate-200 ring-slate-200/60',
+        dot: 'bg-slate-400',
+      }
+  }
+}
+
+function percentageLabel(value: number) {
+  if (!Number.isFinite(value)) return '0 %'
+  return `${Math.max(0, Math.min(100, Math.round(value)))} %`
+}
 
 export default function DashboardClient({
-  userEmail,
-  kpis,
-  series,
-  alerts,
-  appointments,
-  contacts,
-}: {
-  userEmail: string
-  kpis: { employees: number; customers: number; projects: number; invoices: number; revenueYTD: number }
-  series: { customers: SeriesPoint[]; projects: SeriesPoint[]; revenue: RevenuePoint[] }
-  alerts: {
-    lowMaterials: { id: string; name: string; quantity: number; critical_quantity: number }[]
-    dueFleet: { id: string; license_plate: string; inspection_due_date: string | null }[]
-    dueTools: { id: string; name: string; next_inspection_due: string | null }[]
-  }
-  appointments: { id: string; title: string | null; location: string; start_time: string; end_time: string | null; reason: string | null }[]
-  contacts: { name: string; phone: string; email: string }
-}) {
-  const [range, setRange] = useState<3 | 6 | 12>(12)
+  ownerName,
+  metrics,
+  listings,
+  messages,
+  contact,
+}: Props) {
+  const {
+    totalListings,
+    draft,
+    active,
+    inactive,
+    marketed,
+    marketingRate,
+    unreadMessages,
+  } = metrics
 
-  /* ---------------------- Datenaufbereitung ---------------------- */
-  const m = useMemo(() => {
-    const take = <T,>(arr: T[]) => arr.slice(-range)
-    const labels = take(series.customers).map((p) => p.month)
-    return {
-      labels,
-      customers: take(series.customers).map((p) => p.count),
-      projects : take(series.projects).map((p) => p.count),
-      revenue  : take(series.revenue).map((p) => p.amount),
-    }
-  }, [range, series])
+  const latestListings = listings.slice(0, 5)
+  const latestMessages = messages.slice(0, 5)
 
-  const euro = (v: number) =>
-    new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v || 0)
+  return (
+    <div className="relative min-h-[calc(100vh-6rem)] text-slate-900">
+      {/* ganz dezenter Background-Glow */}
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute inset-0" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.06),_transparent_60%)]" />
+      </div>
 
-  /* ---------------------- Charts ---------------------- */
-  const lineData = {
-    labels: m.labels,
-    datasets: [
-      {
-        label: 'Kunden',
-        data: m.customers,
-        borderWidth: 2.5,
-        pointRadius: 3,
-        pointHoverRadius: 5,
-        borderColor: '#0f172a', // dunkelblau (Akzent)
-        fill: 'start' as const,
-        backgroundColor: (ctx: any) => {
-          const { chart } = ctx
-          const { ctx: c, chartArea } = chart
-          if (!chartArea) return 'rgba(15,23,42,0.10)'
-          const grad = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom)
-          grad.addColorStop(0, 'rgba(15,23,42,0.18)')
-          grad.addColorStop(1, 'rgba(15,23,42,0.02)')
-          return grad
-        },
-        tension: 0.35,
-      },
-{
-  label: 'Projekte',
-  data: m.projects,
-  borderWidth: 2.5,
-  pointRadius: 3,
-  pointHoverRadius: 5,
-  borderColor: '#5865f2',            // cyan-500 (frisch, aber ruhig)
-  pointBackgroundColor: '#5865f2',
-  fill: 'start' as const,
-  backgroundColor: (ctx: any) => {
-    const { chart } = ctx
-    const { ctx: c, chartArea } = chart
-    if (!chartArea) return 'rgba(6,182,212,0.10)'
-    const grad = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom)
-    grad.addColorStop(0, 'rgba(6,182,212,0.18)')
-    grad.addColorStop(1, 'rgba(6,182,212,0.02)')
-    return grad
-  },
-  tension: 0.35,
-},
-    ],
-  }
-  const lineOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom' as const,
-        labels: {
-          boxWidth: 10, boxHeight: 10, useBorderRadius: true, borderRadius: 6,
-          color: '#334155', font: { size: 11 },
-        },
-      },
-      tooltip: {
-        backgroundColor: 'rgba(15, 23, 42, 0.92)',
-        titleColor: '#fff',
-        bodyColor: '#e2e8f0',
-        cornerRadius: 10,
-        padding: 10,
-        displayColors: false,
-        callbacks: { label: (ctx: any) => ` ${ctx.dataset.label}: ${ctx.parsed.y}` },
-      },
-      softShadow: {},
-    },
-    scales: {
-      x: { grid: { color: 'rgba(148,163,184,0.15)' }, ticks: { color: '#64748b', font: { size: 11 }, maxRotation: 0 } },
-      y: {
-        beginAtZero: true,
-        grid: { color: 'rgba(148,163,184,0.15)', drawTicks: false },
-        ticks: { color: '#64748b', font: { size: 11 }, precision: 0 as number | undefined },
-      },
-    },
-  }
+      <div className="relative space-y-6">
+        {/* HERO CARD */}
+        <motion.section
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: 'easeOut' }}
+          className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]"
+        >
+          <div className="relative flex flex-col gap-8 p-6 sm:p-8 lg:flex-row lg:items-center">
+            {/* leichte Kante oben */}
+            <div className="pointer-events-none absolute inset-x-10 -top-10 h-16 bg-gradient-to-b from-slate-100 to-transparent" />
 
-  const barData = {
-    labels: m.labels,
-    datasets: [
-      {
-        label: 'Umsatz (€)',
-        data: m.revenue,
-        borderWidth: 1,
-        borderColor: 'rgba(15,23,42,0.7)',
-        backgroundColor: (ctx: any) => {
-          const { chart } = ctx
-          const { ctx: c, chartArea } = chart
-          if (!chartArea) return 'rgba(15,23,42,0.6)'
-          const grad = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom)
-          grad.addColorStop(0, 'rgba(15,23,42,0.85)')
-          grad.addColorStop(1, 'rgba(15,23,42,0.25)')
-          return grad
-        },
-        borderRadius: 10,
-        hoverBorderWidth: 2,
-        hoverBorderColor: '#0f172a',
-      },
-    ],
-  }
-  const barOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: 'rgba(15, 23, 42, 0.92)',
-        titleColor: '#fff',
-        bodyColor: '#e2e8f0',
-        cornerRadius: 10,
-        padding: 10,
-        callbacks: { label: (ctx: any) => ` ${new Intl.NumberFormat('de-DE').format(Number(ctx.parsed.y || 0))} €` },
-      },
-    },
-    scales: {
-      x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 11 } } },
-      y: {
-        beginAtZero: true,
-        grid: { color: 'rgba(148,163,184,0.15)', drawTicks: false },
-        ticks: { color: '#64748b', font: { size: 11 }, callback: (v: any) => `${new Intl.NumberFormat('de-DE').format(Number(v))} €` },
-      },
-    },
-  }
+            {/* Text */}
+            <div className="relative flex-1 space-y-4">
+              <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                Dein Maklernull-Cockpit
+              </div>
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">
+                Willkommen zurück,&nbsp;
+                <span className="bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
+                  {ownerName}
+                </span>
+                .
+              </h1>
+              <p className="max-w-xl text-sm text-slate-600 sm:text-[15px]">
+                Behalte alle Inserate, Anfragen und Vermarktungsstände im Blick – in einem
+                ruhigen, klaren Dashboard. Von Entwurf bis „Vermarktet“ in nur wenigen Klicks.
+              </p>
 
-  /* ---------------------- UI-Helfer ---------------------- */
-  const card = (title: string, value: string | number, Icon: any) => (
-    <div
-      className="relative overflow-hidden rounded-2xl border border-white/60 bg-white/70 p-4 shadow-[0_10px_40px_rgba(2,6,23,0.10)] backdrop-blur-xl"
-      style={{ backgroundImage: 'radial-gradient(600px 300px at 110% -30%, rgba(15,23,42,0.08), transparent)' }}
-    >
-      <div className="flex items-center gap-3">
-        <div className="rounded-xl bg-white/80 p-2 shadow border border-white/60">
-          <Icon className="h-6 w-6 text-slate-900" />
-        </div>
-        <div>
-          <p className="text-[11px] uppercase tracking-wide text-slate-500">{title}</p>
-          <p className="text-2xl font-semibold tracking-tight text-slate-900">{value}</p>
-        </div>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                {/* Primär: Deep-Blue */}
+                <Link
+                  href="/dashboard/inserate/neu"
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-[0_18px_40px_rgba(15,23,42,0.45)] transition hover:bg-slate-800 hover:border-slate-800"
+                >
+                  <PlusIcon className="h-4 w-4" />
+                  Neue Immobilie inserieren
+                </Link>
+                {/* Sekundär: Ghost */}
+                <Link
+                  href="/dashboard/inserate"
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 transition hover:border-slate-300 hover:bg-slate-50"
+                >
+                  <HomeModernIcon className="h-4 w-4" />
+                  Zu meinen Inseraten
+                </Link>
+                {/* Status Chip */}
+                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600">
+                  <ChatBubbleOvalLeftEllipsisIcon className="h-3.5 w-3.5 text-slate-500" />
+                  {unreadMessages > 0 ? (
+                    <span>
+                      {unreadMessages} ungelesene&nbsp;
+                      {unreadMessages === 1 ? 'Nachricht' : 'Nachrichten'}
+                    </span>
+                  ) : (
+                    <span>Keine offenen Nachrichten</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Animated House Orbit */}
+            <div className="relative flex-1 lg:max-w-sm">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: 'easeOut', delay: 0.1 }}
+                className="relative mx-auto flex h-52 w-52 items-center justify-center rounded-full border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.12)] sm:h-60 sm:w-60"
+              >
+                <div className="absolute inset-6 rounded-full border border-slate-200" />
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+                  className="absolute inset-3"
+                >
+                  <div className="absolute -top-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-slate-700" />
+                  <div className="absolute bottom-2 left-5 h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                </motion.div>
+
+                {/* Haus */}
+                <motion.div
+                  animate={{ y: [0, -4, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                  className="relative flex h-20 w-20 items-center justify-center rounded-2xl border border-slate-200 bg-gradient-to-b from-slate-50 to-slate-100 shadow-lg shadow-slate-300/70"
+                >
+                  <HomeModernIcon className="h-11 w-11 text-slate-900" />
+                  <div className="pointer-events-none absolute inset-x-4 -bottom-4 h-4 rounded-full bg-slate-300/70 blur-xl" />
+                </motion.div>
+
+                {/* Status-Chips */}
+                <div className="pointer-events-none absolute -right-4 top-6">
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-800 shadow-sm shadow-emerald-200/90">
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      <span>Aktive Inserate</span>
+                    </div>
+                    <div className="mt-1 text-lg font-semibold leading-none">
+                      {active}
+                    </div>
+                  </div>
+                </div>
+                <div className="pointer-events-none absolute -left-4 bottom-6">
+                  <div className="rounded-2xl border border-slate-900/40 bg-slate-900 text-[11px] text-slate-50 px-3 py-2 shadow-sm shadow-slate-900/50">
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-slate-200" />
+                      <span>Vermarktungsquote</span>
+                    </div>
+                    <div className="mt-1 text-lg font-semibold leading-none">
+                      {percentageLabel(marketingRate)}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* KPIs */}
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: 'easeOut', delay: 0.05 }}
+          className="grid gap-4 md:grid-cols-4"
+        >
+          <MetricCard
+            label="Gesamt-Inserate"
+            value={totalListings}
+            hint="Alle Immobilien, die du jemals angelegt hast."
+          />
+          <MetricCard
+            label="Aktiv"
+            value={active}
+            hint="Aktuell auf Portalen sichtbar."
+            accent="emerald" // leicht grün
+          />
+          <MetricCard
+            label="Vermarktet"
+            value={marketed}
+            hint="Erfolgreich abgeschlossen."
+            accent="blue"
+          />
+          <MetricCard
+            label="Ungelesene Anfragen"
+            value={unreadMessages}
+            hint="Neue Nachrichten von Interessenten."
+            accent="blue"
+          />
+        </motion.section>
+
+        {/* Status + Aktivität */}
+        <motion.section
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: 'easeOut', delay: 0.1 }}
+          className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]"
+        >
+          {/* Linke Spalte: Letzte Inserate & Nachrichten */}
+          <div className="space-y-4">
+            {/* Letzte Inserate */}
+            <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white">
+              <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-5">
+                <div>
+                  <h2 className="text-sm font-medium text-slate-900">
+                    Neueste Inserate
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Vom Entwurf bis zur erfolgreichen Vermarktung.
+                  </p>
+                </div>
+                <Link
+                  href="/dashboard/inserate"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-900 transition hover:border-slate-300 hover:bg-slate-50"
+                >
+                  Alle ansehen
+                  <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+
+              {latestListings.length === 0 ? (
+                <div className="px-4 py-6 text-sm text-slate-600 sm:px-5">
+                  Du hast noch keine Inserate angelegt. Starte mit deiner ersten Immobilie –
+                  es dauert nur wenige Minuten.
+                </div>
+              ) : (
+                <ul className="divide-y divide-slate-100">
+                  {latestListings.map((listing) => {
+                    const statusInfo = niceStatus(listing.status)
+                    return (
+                      <li
+                        key={listing.id}
+                        className="px-4 py-3 text-sm transition hover:bg-slate-50 sm:px-5"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="truncate font-medium text-slate-900">
+                                {listing.title || 'Unbenannte Immobilie'}
+                              </p>
+                            </div>
+                            <p className="mt-0.5 text-xs text-slate-500">
+                              Angelegt am {formatDate(listing.created_at)}
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium ring-1 ${statusInfo.color}`}
+                            >
+                              <span
+                                className={`h-1.5 w-1.5 rounded-full ${statusInfo.dot}`}
+                              />
+                              {statusInfo.label}
+                            </span>
+                            {listing.marketed_at && (
+                              <span className="text-[10px] text-slate-700">
+                                Vermarktet am {formatDate(listing.marketed_at)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </div>
+
+            {/* Letzte Nachrichten */}
+            <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white">
+              <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-5">
+                <div>
+                  <h2 className="text-sm font-medium text-slate-900">
+                    Neueste Anfragen
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Interessenten melden sich direkt auf deine Inserate.
+                  </p>
+                </div>
+                <Link
+                  href="/dashboard/nachrichten"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-900 transition hover:border-slate-300 hover:bg-slate-50"
+                >
+                  Nachrichten
+                  <ChatBubbleOvalLeftEllipsisIcon className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+
+              {latestMessages.length === 0 ? (
+                <div className="px-4 py-6 text-sm text-slate-600 sm:px-5">
+                  Noch keine Nachrichten eingegangen. Sobald Anfragen zu deinen Inseraten
+                  eingehen, erscheinen sie hier.
+                </div>
+              ) : (
+                <ul className="divide-y divide-slate-100">
+                  {latestMessages.map((msg) => (
+                    <li
+                      key={msg.id}
+                      className="px-4 py-3 text-sm transition hover:bg-slate-50 sm:px-5"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-xs text-slate-500">
+                            {formatDate(msg.created_at)}
+                          </p>
+                          <p className="mt-0.5 text-sm text-slate-900">
+                            {msg.sender_name || 'Interessent'} zu{' '}
+                            <span className="font-medium">
+                              {msg.listing_title || 'deinem Inserat'}
+                            </span>
+                          </p>
+                        </div>
+                        {!msg.is_read && (
+                          <span className="mt-1 inline-flex h-6 items-center rounded-full bg-slate-900 text-[11px] font-medium text-slate-50 px-2">
+                            Neu
+                          </span>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+
+          {/* Rechte Spalte: Statusübersicht & Support */}
+          <div className="space-y-4">
+            {/* Status-Balken */}
+            <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white">
+              <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-5">
+                <div>
+                  <h2 className="text-sm font-medium text-slate-900">
+                    Inseratsstatus
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Verteilung deiner Inserate nach Status.
+                  </p>
+                </div>
+                <BoltIcon className="h-4 w-4 text-slate-700" />
+              </div>
+
+              <div className="px-4 py-4 sm:px-5">
+                <div className="mb-3 flex items-center justify-between text-xs text-slate-700">
+                  <span>Vermarktungsquote</span>
+                  <span className="font-semibold text-slate-900">
+                    {percentageLabel(marketingRate)}
+                  </span>
+                </div>
+                <div className="mb-4 h-2 overflow-hidden rounded-full bg-slate-100">
+                  <div className="flex h-full w-full">
+                    {totalListings > 0 && (
+                      <>
+                        <div
+                          className="h-full bg-slate-400/70"
+                          style={{ width: `${(draft / totalListings) * 100 || 0}%` }}
+                        />
+                        <div
+                          className="h-full bg-emerald-500/85"
+                          style={{ width: `${(active / totalListings) * 100 || 0}%` }}
+                        />
+                        <div
+                          className="h-full bg-slate-500/80"
+                          style={{ width: `${(inactive / totalListings) * 100 || 0}%` }}
+                        />
+                        <div
+                          className="h-full bg-slate-900"
+                          style={{ width: `${(marketed / totalListings) * 100 || 0}%` }}
+                        />
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <dl className="grid grid-cols-2 gap-3 text-xs">
+                  <StatusPill
+                    label="Entwürfe"
+                    value={draft}
+                    tone="slate"
+                    description="Noch nicht veröffentlicht."
+                  />
+                  <StatusPill
+                    label="Aktiv"
+                    value={active}
+                    tone="emerald"
+                    description="Auf Portalen sichtbar."
+                  />
+                  <StatusPill
+                    label="Deaktiviert"
+                    value={inactive}
+                    tone="neutral"
+                    description="Versteckt, aber reaktivierbar."
+                  />
+                  <StatusPill
+                    label="Vermarktet"
+                    value={marketed}
+                    tone="blue"
+                    description="Abgeschlossen & archiviert."
+                  />
+                </dl>
+              </div>
+            </div>
+
+            {/* Kontakt / Support */}
+            <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white">
+              <div className="border-b border-slate-100 px-4 py-3 sm:px-5">
+                <h2 className="text-sm font-medium text-slate-900">
+                  Hilfe & Support
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Fragen zur Vermarktung oder zur Plattform? Wir sind für dich da.
+                </p>
+              </div>
+              <div className="space-y-3 px-4 py-4 text-sm text-slate-800 sm:px-5">
+                <div className="flex items-center gap-2">
+                  <EnvelopeOpenIcon className="h-4 w-4 text-slate-700" />
+                  <a
+                    href={`mailto:${contact.email}`}
+                    className="truncate hover:text-slate-900"
+                  >
+                    {contact.email}
+                  </a>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ChatBubbleOvalLeftEllipsisIcon className="h-4 w-4 text-slate-700" />
+                  <a href={`tel:${contact.phone}`} className="hover:text-slate-900">
+                    {contact.phone}
+                  </a>
+                </div>
+                <p className="pt-1 text-xs text-slate-600">
+                  Unser Ziel: Eigentümer sollen inserieren, Anfragen erhalten und ihre
+                  Immobilie stressfrei vermarkten – Maklernull kümmert sich um den Rest.
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.section>
       </div>
     </div>
   )
+}
 
-  /* ---------------------- Render ---------------------- */
+/* === Kleine Sub-Komponenten === */
+
+type MetricCardProps = {
+  label: string
+  value: number
+  hint?: string
+  accent?: 'emerald' | 'blue'
+}
+
+function MetricCard({ label, value, hint, accent }: MetricCardProps) {
+  const bg =
+    accent === 'emerald'
+      ? 'bg-emerald-50'
+      : 'bg-white'
+
+  const shadow =
+    accent === 'emerald'
+      ? 'shadow-[0_18px_40px_rgba(16,185,129,0.16)]'
+      : accent === 'blue'
+        ? 'shadow-[0_18px_40px_rgba(15,23,42,0.12)]'
+        : 'shadow-[0_18px_40px_rgba(15,23,42,0.06)]'
+
   return (
-    <section className="space-y-6">
-      {/* Header / Hero */}
-      <div className="relative overflow-hidden rounded-2xl border border-white/60 bg-white/70 shadow-[0_10px_40px_rgba(2,6,23,0.10)] backdrop-blur-xl">
-        <div className="absolute inset-0 bg-[radial-gradient(1200px_600px_at_80%_-20%,rgba(15,23,42,0.10),transparent)]" />
-        <div className="relative p-6">
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Willkommen zurück</h1>
-          <p className="text-sm text-slate-600">Eingeloggt als {userEmail}</p>
-        </div>
+    <div
+      className={`relative overflow-hidden rounded-2xl ${bg} p-4 ${shadow}`}
+    >
+      <div className="absolute inset-x-0 -top-10 h-12 bg-gradient-to-b from-slate-100 to-transparent" />
+      <div className="relative space-y-1.5">
+        <p className="text-xs text-slate-500">{label}</p>
+        <p className="text-2xl font-semibold tracking-tight text-slate-900">
+          {value}
+        </p>
+        {hint && <p className="text-[11px] text-slate-500">{hint}</p>}
       </div>
+    </div>
+  )
+}
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        {card('Mitarbeiter', kpis.employees, UserGroupIcon)}
-        {card('Kunden', kpis.customers, UserGroupIcon)}
-        {card('Projekte', kpis.projects, BriefcaseIcon)}
-        {card('Rechnungen', kpis.invoices, DocumentChartBarIcon)}
-        {card('Umsatz YTD', euro(kpis.revenueYTD), BanknotesIcon)}
+type StatusPillProps = {
+  label: string
+  value: number
+  tone: 'slate' | 'emerald' | 'blue' | 'neutral'
+  description?: string
+}
+
+function StatusPill({ label, value, tone, description }: StatusPillProps) {
+  const base =
+    tone === 'emerald'
+      ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+      : tone === 'blue'
+        ? 'bg-slate-900 text-slate-50 border-slate-900'
+        : tone === 'neutral'
+          ? 'bg-slate-50 border-slate-200 text-slate-700'
+          : 'bg-slate-50 border-slate-200 text-slate-800'
+
+  const descColor =
+    tone === 'blue'
+      ? 'text-slate-200' // 👉 bei "Vermarktet" alles hell/weiß
+      : 'text-slate-600'
+
+  return (
+    <div
+      className={`flex flex-col justify-between gap-1 rounded-2xl border px-3 py-2.5 ${base}`}
+    >
+      <div className="flex items-center justify-between gap-2 text-[11px]">
+        <span className="font-medium">{label}</span>
+        <span className="text-xs font-semibold">{value}</span>
       </div>
-
-      {/* REIHE 1: Charts */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Links: Kunden & Projekte (Line) */}
-        <div
-          className="relative rounded-2xl border border-white/60 bg-white/70 p-4 shadow-[0_10px_40px_rgba(2,6,23,0.10)] backdrop-blur-xl"
-          style={{ backgroundImage: 'radial-gradient(700px 350px at 120% -20%, rgba(15,23,42,0.08), transparent)' }}
-        >
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-slate-800">Kunden & Projekte</h3>
-            <div className="inline-flex overflow-hidden rounded-xl border border-white/60 bg-white/80 shadow">
-              {[3,6,12].map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setRange(n as 3|6|12)}
-                  className={`px-3 py-1 text-xs transition ${
-                    range===n
-                      ? 'bg-slate-900 text-white'
-                      : 'text-slate-800 hover:bg-white'
-                  }`}
-                >
-                  {n}M
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="h-56">
-            <Line data={lineData} options={lineOptions as any} />
-          </div>
-        </div>
-
-        {/* Rechts: Umsatz/Monat (Bar) */}
-        <div
-          className="relative rounded-2xl border border-white/60 bg-white/70 p-4 shadow-[0_10px_40px_rgba(2,6,23,0.10)] backdrop-blur-xl"
-          style={{ backgroundImage: 'radial-gradient(700px 350px at 120% -20%, rgba(15,23,42,0.08), transparent)' }}
-        >
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-slate-800">Umsatz pro Monat</h3>
-            <div className="text-xs text-slate-500">Letzte {range} Monate</div>
-          </div>
-          <div className="h-56">
-            <Bar data={barData} options={barOptions as any} />
-          </div>
-        </div>
-      </div>
-
-      {/* REIHE 2: Termine (heute) & Ansprechpartner */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Termine HEUTE */}
-        <div
-          className="relative rounded-2xl border border-white/60 bg-white/70 p-4 shadow-[0_10px_40px_rgba(2,6,23,0.10)] backdrop-blur-xl"
-          style={{ backgroundImage: 'radial-gradient(600px 300px at 110% -30%, rgba(15,23,42,0.06), transparent)' }}
-        >
-          <h3 className="mb-3 text-sm font-semibold text-slate-800">Heutige Termine</h3>
-          {appointments.length === 0 ? (
-            <p className="text-sm text-slate-500">Heute stehen keine Termine an.</p>
-          ) : (
-            <ul className="space-y-2">
-              {appointments.map((a) => {
-                const dateYmd = new Date(a.start_time).toISOString().slice(0, 10)
-                return (
-                  <li key={a.id}>
-                    <Link
-                      href={`/dashboard/kalender?event=${a.id}&date=${dateYmd}`}
-                      className="group block rounded-xl border border-white/60 bg-white/70 p-3 shadow hover:-translate-y-0.5 hover:bg-white hover:shadow-md transition"
-                    >
-                      <div className="flex items-center gap-2 text-sm">
-                        <CalendarDaysIcon className="h-4 w-4 text-slate-400 transition group-hover:text-slate-900" />
-                        <span className="font-medium text-slate-800 group-hover:text-slate-900">
-                          {a.title || a.reason || 'Termin'}
-                        </span>
-                        <span className="ml-auto text-xs text-slate-500">
-                          {new Date(a.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                      <p className="ml-6 text-xs text-slate-500">{a.location}</p>
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-        </div>
-
-        {/* Ansprechpartner */}
-        <div
-          className="relative rounded-2xl border border-white/60 bg-white/70 p-4 shadow-[0_10px_40px_rgba(2,6,23,0.10)] backdrop-blur-xl"
-          style={{ backgroundImage: 'radial-gradient(600px 300px at 110% -30%, rgba(15,23,42,0.08), transparent)' }}
-        >
-          <h3 className="mb-3 text-sm font-semibold text-slate-800">Ansprechpartner</h3>
-          <div className="flex items-center gap-3">
-            <div className="grid h-12 w-12 place-content-center rounded-full bg-slate-900 text-white shadow">
-              <span className="text-base font-semibold">
-                {contacts.name.split(' ').map((n) => n[0]).slice(0,2).join('')}
-              </span>
-            </div>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-slate-900">{contacts.name}</p>
-              <p className="truncate text-xs text-slate-500">{contacts.email}</p>
-            </div>
-          </div>
-          <div className="mt-3 space-y-2 text-sm">
-            <div className="flex items-center gap-2 text-slate-700">
-              <PhoneIcon className="h-4 w-4 text-slate-400" />
-              <a className="hover:underline" href={`tel:${contacts.phone}`}>{contacts.phone}</a>
-            </div>
-            <div className="flex items-center gap-2 text-slate-700">
-              <EnvelopeIcon className="h-4 w-4 text-slate-400" />
-              <a className="hover:underline" href={`mailto:${contacts.email}`}>{contacts.email}</a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* REIHE 3: Warnungen */}
-      <div
-        className="relative rounded-2xl border border-white/60 bg-white/70 p-4 shadow-[0_10px_40px_rgba(2,6,23,0.10)] backdrop-blur-xl"
-        style={{ backgroundImage: 'radial-gradient(700px 350px at 120% -20%, rgba(245,158,11,0.08), transparent)' }}
-      >
-        <h3 className="mb-3 text-sm font-semibold text-slate-800">Warnungen (nächste 30 Tage)</h3>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {/* Material knapp */}
-          <div>
-            <p className="text-xs font-medium text-slate-600">Materialbestand niedrig</p>
-            {alerts.lowMaterials.length === 0 ? (
-              <p className="mt-1 text-xs text-slate-500">Alles im grünen Bereich.</p>
-            ) : (
-              <ul className="mt-2 space-y-1">
-                {alerts.lowMaterials.slice(0, 6).map((m) => (
-                  <li
-                    key={m.id}
-                    className="flex items-center justify-between rounded-lg bg-amber-50/80 px-2 py-1 text-xs text-amber-800 ring-1 ring-amber-200"
-                  >
-                    <span className="truncate">{m.name}</span>
-                    <span className="ml-2">{m.quantity} / {m.critical_quantity}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {/* TÜV */}
-          <div>
-            <p className="text-xs font-medium text-slate-600">TÜV (Fuhrpark)</p>
-            {alerts.dueFleet.length === 0 ? (
-              <p className="mt-1 text-xs text-slate-500">Keine Fälligkeiten in 30 Tagen.</p>
-            ) : (
-              <ul className="mt-2 space-y-1">
-                {alerts.dueFleet.slice(0, 6).map((f) => (
-                  <li
-                    key={f.id}
-                    className="flex items-center justify-between rounded-lg bg-amber-50/80 px-2 py-1 text-xs text-amber-800 ring-1 ring-amber-200"
-                  >
-                    <span>{f.license_plate}</span>
-                    <span className="ml-2">{f.inspection_due_date ?? '—'}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {/* Werkzeug-Prüfung */}
-          <div>
-            <p className="text-xs font-medium text-slate-600">Werkzeug-Prüfungen</p>
-            {alerts.dueTools.length === 0 ? (
-              <p className="mt-1 text-xs text-slate-500">Keine Fälligkeiten in 30 Tagen.</p>
-            ) : (
-              <ul className="mt-2 space-y-1">
-                {alerts.dueTools.slice(0, 6).map((t) => (
-                  <li
-                    key={t.id}
-                    className="flex items-center justify-between rounded-lg bg-amber-50/80 px-2 py-1 text-xs text-amber-800 ring-1 ring-amber-200"
-                  >
-                    <span className="truncate">{t.name}</span>
-                    <span className="ml-2">{t.next_inspection_due ?? '—'}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      </div>
-    </section>
+      {description && (
+        <p className={`text-[10px] ${descColor}`}>{description}</p>
+      )}
+    </div>
   )
 }

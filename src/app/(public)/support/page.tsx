@@ -11,35 +11,35 @@ import {
 } from '@heroicons/react/24/outline'
 
 /* ----------------------------- SEO / Meta ----------------------------- */
-const SITE_NAME = 'GLENO'
+const SITE_NAME = 'Maklernull'
 const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || 'https://gleno.de'
+  process.env.NEXT_PUBLIC_SITE_URL || 'https://maklernull.de'
 const PRIMARY = '#0a1b40'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'Support – GLENO',
-    template: '%s | GLENO',
+    default: 'Support – Maklernull',
+    template: '%s | Maklernull',
   },
   description:
-    'Support für GLENO: Telefon & E-Mail, schnelle Hilfe, Import, Status & FAQ. All-in-One Plattform für Agenturen & Dienstleister.',
+    'Support für Maklernull: Hilfe zu Zugang, Kursen, Zertifikaten, Rechnungen & Weiterbildungspflicht. Persönlicher Support per Telefon & E-Mail.',
   alternates: { canonical: `${SITE_URL}/support` },
   openGraph: {
     type: 'website',
     url: `${SITE_URL}/support`,
     siteName: SITE_NAME,
-    title: 'Support – GLENO',
+    title: 'Support – Maklernull',
     description:
-      'Telefon & E-Mail Support, Hilfe bei Einrichtung, Import, CRM, Marktplatz & Website-Modul.',
+      'Telefon- & E-Mail-Support für Maklernull: Zugang, Kurse, Zertifikate & Rechnungen – schnell und persönlich.',
     images: [{ url: `${SITE_URL}/og/og-support.jpg`, width: 1200, height: 630 }],
     locale: 'de_DE',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Support – GLENO',
+    title: 'Support – Maklernull',
     description:
-      'Telefon & E-Mail Support, Hilfe bei Einrichtung, Import, CRM, Marktplatz & Website-Modul.',
+      'Telefon- & E-Mail-Support für Maklernull: Zugang, Kurse, Zertifikate & Rechnungen – schnell und persönlich.',
     images: [`${SITE_URL}/og/og-support.jpg`],
   },
   robots: { index: true, follow: true },
@@ -94,24 +94,25 @@ export default function SupportPage() {
                 className="rounded-full px-2 py-0.5 text-white"
                 style={{ backgroundColor: PRIMARY }}
               >
-                Hilfe
+                Support
               </span>
               <span>Persönlicher Support – Telefon & E-Mail</span>
             </p>
 
             <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-              Wir helfen dir schnell & unkompliziert
+              Wir sind für Sie da – schnell & unkompliziert
             </h1>
             <p className="mx-auto mt-3 max-w-2xl text-base leading-relaxed text-slate-700">
-              Fragen zu Einrichtung, Import, CRM, Marktplatz, Website-Modul oder
-              Abrechnung? Melde dich gerne – werktags reagieren wir in der Regel
-              innerhalb weniger Stunden.
+              Sie haben Fragen zu Zugang, Kursfreischaltung, Zertifikaten,
+              Rechnungen oder zur Erfüllung Ihrer Weiterbildungspflicht? Melden
+              Sie sich gerne – werktags reagieren wir in der Regel innerhalb
+              weniger Stunden.
             </p>
 
             {/* Kontakt-CTA */}
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <a
-                href="tel:+4950353169991"
+                href="tel:+4950353169999"
                 className="inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow transition"
                 style={{
                   backgroundColor: PRIMARY,
@@ -121,15 +122,15 @@ export default function SupportPage() {
                 aria-label="Support anrufen"
               >
                 <PhoneIcon className="h-5 w-5" />
-                +49&nbsp;5035&nbsp;3169991
+                +49&nbsp;5035&nbsp;3169999
               </a>
               <a
-                href="mailto:support@gleno.de"
+                href="mailto:hey@maklernull.de"
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-white/60 bg-white/80 px-6 py-3 text-sm font-semibold text-slate-900 ring-1 ring-white/60 backdrop-blur hover:bg-white"
                 aria-label="E-Mail an den Support schreiben"
               >
                 <EnvelopeIcon className="h-5 w-5" />
-                support@gleno.de
+                hey@maklernull.de
               </a>
             </div>
 
@@ -144,9 +145,9 @@ export default function SupportPage() {
       <section className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-6 sm:grid-cols-3">
         {[
           {
-            title: 'Import & Daten',
-            desc: 'Vorlagen & Anleitung für den Import deiner Daten.',
-            href: '/docs/csv-vorlagen',
+            title: 'Zugang & Daten',
+            desc: 'Hinweise zu Login, Teilnehmerzugängen und Stammdaten.',
+            href: '/docs/konto',
             icon: DocumentArrowDownIcon,
           },
           {
@@ -157,7 +158,7 @@ export default function SupportPage() {
           },
           {
             title: 'Hilfe-Center',
-            desc: 'Schritt-für-Schritt-Guides & Best Practices zu GLENO.',
+            desc: 'Schritt-für-Schritt-Guides & Best Practices zu Maklernull.',
             href: '/docs',
             icon: LifebuoyIcon,
           },
@@ -193,20 +194,20 @@ export default function SupportPage() {
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           {[
             {
-              q: 'Wie starte ich mit GLENO?',
-              a: 'Registriere dein Konto, lege dein Unternehmen an und folge den Schritten in der Dokumentation. Bei Fragen hilft der Support.',
+              q: 'Wie starte ich mit Maklernull?',
+              a: 'Registrieren Sie Ihr Konto, legen Sie Ihr Profil an und wählen Sie den passenden Kurs. Bei Fragen unterstützt Sie der Support Schritt für Schritt.',
             },
             {
-              q: 'Wie importiere ich bestehende Daten?',
-              a: 'Über passende CSV-Vorlagen. Im Hilfe-Center findest du Beispiele & Erklärungen.',
+              q: 'Wie erhalte ich Zugang zu meinen Kursen?',
+              a: 'Nach der Buchung erhalten Sie Ihre Zugangsdaten bzw. einen Login-Link per E-Mail. Im Zweifel hilft der Support beim Freischalten.',
+            },
+            {
+              q: 'Wie bekomme ich meinen Weiterbildungsnachweis?',
+              a: 'Nach erfolgreichem Abschluss des Kurses stellen wir Ihnen Ihren Nachweis bzw. Ihr Zertifikat digital zur Verfügung – zum Download und für Ihre Unterlagen.',
             },
             {
               q: 'Welche Support-Kanäle gibt es?',
-              a: 'Telefon & E-Mail. Wir antworten in der Regel werktags innerhalb weniger Stunden.',
-            },
-            {
-              q: 'Wo liegen meine Daten?',
-              a: 'In der EU, verschlüsselt übertragen. Exporte sind jederzeit möglich.',
+              a: 'Sie erreichen uns per Telefon und E-Mail. In der Regel antworten wir werktags innerhalb weniger Stunden.',
             },
           ].map((f) => (
             <details
@@ -230,9 +231,9 @@ export default function SupportPage() {
 
         {/* SEO-Abschluss */}
         <p className="mt-8 text-sm leading-relaxed text-slate-600">
-          Noch Fragen zu <strong>GLENO</strong> oder zur Einrichtung deiner
-          All-in-One Plattform für Marktplatz, CRM und Website? Ruf uns an oder
-          schreib eine E-Mail – wir unterstützen dich beim Start und bei allen
+          Noch Fragen zu <strong>Maklernull</strong>, zu Ihrem Zugang oder zur
+          Erfüllung Ihrer Weiterbildungspflicht? Rufen Sie uns an oder schreiben
+          Sie eine E-Mail – wir unterstützen Sie beim Start und bei allen
           Schritten im laufenden Betrieb.
         </p>
       </section>

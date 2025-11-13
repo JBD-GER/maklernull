@@ -99,8 +99,8 @@ export default function DatenschutzPage() {
             Sie sich bitte an:
           </p>
           <p>
-            <a href="mailto:hey@realmeta.io" className="text-accent-500 hover:underline">
-              hey@realmeta.io
+            <a href="mailto:hey@maklernull.de" className="text-accent-500 hover:underline">
+              hey@maklernull.de
             </a>
           </p>
         </div>
@@ -131,8 +131,8 @@ export default function DatenschutzPage() {
             Diese Datenschutzerklärung ist gültig ab Juli 2025.<br />
             Bei Fragen wenden Sie sich bitte an:
             <br />
-            <a href="mailto:hey@realmeta.io" className="text-accent-500 hover:underline">
-              hey@realmeta.io
+            <a href="mailto:hey@maklernull.de" className="text-accent-500 hover:underline">
+              hey@maklernull.de
             </a>
           </p>
         </div>

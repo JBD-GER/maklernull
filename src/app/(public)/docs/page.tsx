@@ -3,14 +3,17 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || 'https://gleno.io'
+  process.env.NEXT_PUBLIC_SITE_URL || 'https://maklernull.de'
 const PRIMARY = '#0a1b40'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: 'Dokumentation – GLENO', template: '%s | GLENO' },
+  title: {
+    default: 'Dokumentation – Maklernull',
+    template: '%s | Maklernull',
+  },
   description:
-    'GLENO Dokumentation: Einrichtung, Funktionen, Import, Status & Support.',
+    'Maklernull Dokumentation: Ablauf, Pakete, Unterlagen-Upload, Status & Support.',
   alternates: { canonical: `${SITE_URL}/docs` },
   robots: { index: true, follow: true },
 }
@@ -35,17 +38,18 @@ export default function DocsOverviewPage() {
                 className="rounded-full px-2 py-0.5 text-white"
                 style={{ backgroundColor: PRIMARY }}
               >
-                Docs
+                Hilfe & Docs
               </span>
-              <span>Alle Anleitungen an einem Ort</span>
+              <span>Alle Anleitungen zu Maklernull an einem Ort</span>
             </div>
 
             <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-              Dokumentation für <span className="whitespace-nowrap">GLENO</span>
+              Dokumentation für <span className="whitespace-nowrap">Maklernull</span>
             </h1>
             <p className="mx-auto mt-3 max-w-3xl text-base leading-relaxed text-slate-700">
-              Schritt-für-Schritt-Guides für Einrichtung, Import, CRM, Marktplatz,
-              Website-Modul, Benachrichtigungen &amp; mehr – im klaren GLENO-Setup.
+              Erfahren Sie Schritt für Schritt, wie Sie Ihr Paket buchen, Unterlagen
+              hochladen, Verkauf oder Vermietung vorbereiten und bei Fragen direkt den
+              richtigen Kontakt finden.
             </p>
           </div>
         </div>
@@ -56,29 +60,24 @@ export default function DocsOverviewPage() {
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
-              href: '/docs/csv-vorlagen',
-              title: 'CSV-Vorlage & Import',
-              desc: 'Vorlage laden, Felder verstehen, sauber Kundendaten importieren.',
-            },
-            {
               href: '/funktionen',
-              title: 'Funktionen im Überblick',
-              desc: 'Marktplatz, CRM, Website-Modul, Vorlagen, Team & Prozesse.',
+              title: 'Pakete & Leistungen',
+              desc: 'Übersicht über Leistungen für Verkauf & Vermietung – von Inserierung bis Dokumentenprüfung.',
             },
             {
               href: '/preis',
-              title: 'Preis & Paket',
-              desc: 'Ein klares Paket. Monatlicher Preis, jederzeit kündbar.',
+              title: 'Preise & Laufzeiten',
+              desc: 'Alle Pakete mit Preisen, Laufzeiten und enthaltenen Services im Vergleich.',
             },
             {
               href: '/status',
-              title: 'Systemstatus & Roadmap',
-              desc: 'Verfügbarkeit, Bugfixes & geplante Features von GLENO.',
+              title: 'Systemstatus & Hinweise',
+              desc: 'Aktuelle Erreichbarkeit, Wartungen und wichtige Hinweise zu Maklernull.',
             },
             {
               href: '/support',
-              title: 'Support kontaktieren',
-              desc: 'Direkter Kontakt zu uns – ohne Bot-Hürden.',
+              title: 'Kontakt & Support',
+              desc: 'So erreichen Sie uns bei Fragen zu Ihrem Paket, Unterlagen oder Inserat.',
             },
           ].map((i) => (
             <Link

@@ -189,14 +189,21 @@ export async function POST(req: Request) {
 
 export async function PATCH(req: Request) {
   const supabase = await supabaseServer()
-  const { data: { user }, error: authErr } = await supabase.auth.getUser()
+  const {
+    data: { user },
+    error: authErr,
+  } = await supabase.auth.getUser()
 
   if (authErr || !user) {
     return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
   }
 
   let body: any = {}
-  try { body = await req.json() } catch { body = {} }
+  try {
+    body = await req.json()
+  } catch {
+    body = {}
+  }
 
   const updates: Record<string, any> = {}
 
@@ -208,7 +215,8 @@ export async function PATCH(req: Request) {
   if ('postal_code' in body)  updates.postal_code  = norm(body.postal_code)
   if ('city' in body)         updates.city         = norm(body.city)
   if ('country' in body)      updates.country      = norm(body.country)
-  if ('website' in body)      updates.website      = norm(body.website)
+
+  // website / vat_number sind raus → nichts mehr dazu
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'Keine gültigen Felder im PATCH gefunden.' }, { status: 400 })
@@ -217,7 +225,11 @@ export async function PATCH(req: Request) {
   const { data, error } = await adminClient
     .from('profiles')
     .upsert(
-      { id: user.id, ...updates },
+      {
+        id: user.id,
+        email: user.email, // <- wichtig wegen NOT NULL
+        ...updates,
+      },
       { onConflict: 'id' }
     )
     .select('*')

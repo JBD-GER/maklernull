@@ -14,35 +14,35 @@ import {
 import Link from 'next/link'
 
 /* ----------------------- Site/SEO ----------------------- */
-const SITE_NAME = 'GLENO'
+const SITE_NAME = 'Maklernull'
 const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || 'https://gleno.de'
+  process.env.NEXT_PUBLIC_SITE_URL || 'https://maklernull.de'
 const PRIMARY = '#0a1b40'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'Systemstatus – GLENO',
-    template: '%s | GLENO',
+    default: 'Status – Maklernull',
+    template: '%s | Maklernull',
   },
   description:
-    'Live Systemstatus von GLENO: Hosting, Web-App, Datenbank, API, Marktplatz, Website-Modul, E-Mail & Benachrichtigungen. Patchnotes, Roadmap & Incident-Chronik.',
+    'Live Status von Maklernull: Inserats-Erstellung, Portal-Schnittstellen, Kontaktanfragen, E-Mail-Benachrichtigungen & Reporting. Mit Incident-Chronik, Patchnotes & Roadmap.',
   alternates: { canonical: `${SITE_URL}/status` },
   openGraph: {
     type: 'website',
     url: `${SITE_URL}/status`,
     siteName: SITE_NAME,
-    title: 'Systemstatus – GLENO',
+    title: 'Status – Maklernull',
     description:
-      'Alle GLENO-Systeme im Überblick: Marktplatz, CRM, Website-Modul & Logistik. Transparente Incidents, Patchnotes und Roadmap.',
+      'Alle Kerndienste von Maklernull im Überblick: Inserate, Portal-Sync, Kontaktanfragen & E-Mail-Benachrichtigungen. Transparente Incidents, Patchnotes und Roadmap.',
     images: [{ url: `${SITE_URL}/og/og-status.jpg`, width: 1200, height: 630 }],
     locale: 'de_DE',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Systemstatus – GLENO',
+    title: 'Status – Maklernull',
     description:
-      'Status von Marktplatz, CRM, Website-Modul, API & Benachrichtigungen. Mit Patchnotes und Roadmap.',
+      'Status von Inserats-Erstellung, Portal-Schnittstellen, Kontaktanfragen & Benachrichtigungen. Mit Patchnotes und Roadmap.',
     images: [`${SITE_URL}/og/og-status.jpg`],
   },
   robots: { index: true, follow: true },
@@ -56,7 +56,7 @@ function JsonLd() {
     name: SITE_NAME,
     url: `${SITE_URL}/status`,
     description:
-      'Statusseite von GLENO: Betriebszustand von Marktplatz, CRM, Website-Modul, Incidents, Patchnotes und Roadmap.',
+      'Statusseite von Maklernull: Betriebszustand von Inserats-Erstellung, Portal-Schnittstellen, Kontaktanfragen, Incidents, Patchnotes und Roadmap.',
     inLanguage: 'de-DE',
     publisher: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
   }
@@ -210,21 +210,22 @@ export default function StatusPage() {
                   <span className="relative inline-block h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-emerald-500">
                     <span className="absolute inset-0 rounded-full bg-emerald-500/60 animate-ping" />
                   </span>
-                  Alle Kerndienste von GLENO sind betriebsbereit
+                  Alle Kerndienste von Maklernull sind betriebsbereit
                 </span>
               </h1>
               <p className="mx-auto mt-3 max-w-2xl text-base leading-relaxed text-slate-700">
-                Marktplatz, CRM, Website-Modul & Logistik laufen stabil. Alle
-                bekannten Themen und Verbesserungen findest du in Incident-Chronik,
-                Patchnotes und Roadmap.
+                Inserats-Erstellung, Portal-Schnittstellen und
+                Kontaktanfragen laufen stabil. Alle bekannten Themen und
+                Verbesserungen finden Sie in Incident-Chronik, Patchnotes
+                und Roadmap.
               </p>
 
               <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                 <Link
-                  href="/preis"
+                  href="/preise"
                   className="inline-flex items-center justify-center rounded-full border border-white/60 bg-white/85 px-6 py-3 text-sm font-semibold text-slate-900 ring-1 ring-white/60 backdrop-blur hover:bg-white"
                 >
-                  Preis & Paket
+                  Preise & Pakete
                 </Link>
                 <Link
                   href="/support"
@@ -259,15 +260,15 @@ export default function StatusPage() {
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Pill
               state="operational"
-              label="Hosting (EU)"
+              label="Hosting (EU - Frankfurt)"
               icon={CloudIcon}
               note="Uptime (30 Tage): 100 %"
             />
             <Pill
               state="operational"
-              label="Web-App (GLENO)"
+              label="Web-App (Maklernull)"
               icon={GlobeAltIcon}
-              note="Median TTFB: 130 ms"
+              note="Stabile Performance"
             />
             <Pill
               state="operational"
@@ -279,39 +280,42 @@ export default function StatusPage() {
               state="operational"
               label="API & Integrationen"
               icon={BoltIcon}
-              note="Stabiler Betrieb"
+              note="Portal-Schnittstellen & Webhooks"
             />
             <Pill
               state="operational"
-              label="Marktplatz"
-              icon={ArrowPathIcon}
-              note="Anfragen, Matching & Chat"
-            />
-            <Pill
-              state="operational"
-              label="Website & Formulare"
-              icon={GlobeAltIcon}
-              note="Onepager & Lead-Formulare"
-            />
-            <Pill
-              state="operational"
-              label="CRM & Angebote"
+              label="Inserats-Erstellung"
               icon={CheckCircleIcon}
-              note="Pipelines, Angebote, Rechnungen"
+              note="Exposé-Export & Medienverarbeitung"
             />
             <Pill
               state="operational"
-              label="E-Mail & Benachrichtigungen"
-              icon={EnvelopeIcon}
-              note="Transaktionsmails & Reminder"
+              label="Portal-Schnittstellen"
+              icon={ArrowPathIcon}
+              note="z. B. Immobilienscout24, Immowelt, Kleinanzeigen*"
             />
             <Pill
               state="operational"
-              label="Logistik & Ressourcen"
+              label="Kontaktanfragen-Eingang"
               icon={BellAlertIcon}
-              note="Fuhrpark-, Material- & Fälligkeitshinweise"
+              note="Lead-Eingang über Portale & Website-Formulare"
+            />
+            <Pill
+              state="operational"
+              label="E-Mail"
+              icon={EnvelopeIcon}
+              note="Lead-Weiterleitung & Bestätigungen"
+            />
+            <Pill
+              state="operational"
+              label="Reporting & Statistiken"
+              icon={GlobeAltIcon}
+              note="Auswertungen zu Inseraten & Anfragen"
             />
           </div>
+          <p className="mt-3 text-xs text-slate-500">
+            * Nennung beispielhaft. Die tatsächlichen Portale hängen von Ihrer gebuchten Anbindung ab.
+          </p>
         </section>
 
         {/* Incident-Chronik (letzte 30 Tage) */}
@@ -325,12 +329,12 @@ export default function StatusPage() {
                 <CheckCircleIcon className="mt-0.5 h-5 w-5 text-emerald-600" />
                 <div>
                   <div className="font-medium text-slate-900">
-                    15.09.2025 – Verzögerte Lead-Synchronisierung Marktplatz → CRM
+                    15.09.2025 – Verzögerte Übertragung einzelner Inserate zu Portalen
                   </div>
                   <p>
-                    Ursache: Queue-Konfiguration nach Deployment. Verzögerung bis
-                    zu 6 Minuten. Hotfix ausgerollt, Monitoring-Regeln
-                    nachgeschärft.
+                    Ursache: Drosselung bei einem Portal-Endpoint. Retry-Logik
+                    angepasst, Monitoring-Regeln erweitert. Alle betroffenen
+                    Inserate wurden erneut synchronisiert.
                   </p>
                 </div>
               </li>
@@ -338,11 +342,11 @@ export default function StatusPage() {
                 <CheckCircleIcon className="mt-0.5 h-5 w-5 text-emerald-600" />
                 <div>
                   <div className="font-medium text-slate-900">
-                    05.09.2025 – Verzögerte E-Mails bei großen Anhängen
+                    05.09.2025 – Verzögerte Weiterleitung von Kontaktanfragen per E-Mail
                   </div>
                   <p>
-                    Mail-Worker skaliert & Attachment-Handling optimiert. Seitdem
-                    keine Auffälligkeiten.
+                    Mail-Worker skaliert & Queue-Konfiguration optimiert. Seitdem
+                    werden Anfragen wieder in Echtzeit weitergeleitet.
                   </p>
                 </div>
               </li>
@@ -350,11 +354,11 @@ export default function StatusPage() {
                 <ExclamationTriangleIcon className="mt-0.5 h-5 w-5 text-amber-600" />
                 <div>
                   <div className="font-medium text-slate-900">
-                    28.08.2025 – Kurzzeitige Ladezeiten-Erhöhung im Marktplatz
+                    28.08.2025 – Kurzzeitig erhöhte Ladezeiten im Reporting
                   </div>
                   <p>
-                    Peaks durch Such-Index-Rebuild. Künftig separate Wartungsfenster
-                    und gestaffelte Reindizierung.
+                    Ursache: Neuaufbau aggregierter Statistiken. Künftig separate
+                    Wartungsfenster und gestaffelte Aktualisierung der Reports.
                   </p>
                 </div>
               </li>
@@ -379,20 +383,20 @@ export default function StatusPage() {
               </div>
               <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-slate-700">
                 <li>
-                  Marktplatz: Matching-Engine optimiert – bessere Relevanz bei
-                  Nischen-Services.
+                  Portal-Schnittstellen: verbessertes Mapping für Objektarten,
+                  Ausstattungsmerkmale & Energiekennwerte.
                 </li>
                 <li>
-                  Website-Modul: Lead-Formulare senden jetzt Kontext direkt in die
-                  Pipeline (Quelle, Kampagne, UTM).
+                  Kontaktanfragen: Deduplizierung optimiert – weniger doppelte Leads
+                  bei mehrfachen Portal-Weiterleitungen.
                 </li>
                 <li>
-                  CRM: Angebots-PDFs mit konsistenter Branding-Konfiguration pro
-                  Mandant.
+                  Exposé-Export: optimierte PDF-Struktur für bessere Lesbarkeit auf
+                  Mobilgeräten.
                 </li>
                 <li>
-                  Performance: Schnellere Ladezeiten im Deal-Detail (Lazy Loading von
-                  Dateien & Aktivitäten).
+                  Dashboard: neue Kacheln für Inserats-Reichweite und
+                  Kontaktanfragen pro Portal.
                 </li>
               </ul>
             </div>
@@ -402,18 +406,18 @@ export default function StatusPage() {
               </div>
               <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-slate-700">
                 <li>
-                  Benachrichtigungen: Deduplizierung verbessert, weniger doppelte
-                  Reminder.
+                  E-Mail-Benachrichtigungen: klarere Betreffzeilen & Portal-Hinweise
+                  in der Lead-Mail.
                 </li>
                 <li>
-                  Import: CSV-Validierung mit klareren Fehlermeldungen &
-                  Vorschau-Funktion.
+                  Import: CSV-Validierung für Objekt-Importe mit Vorschau & Details
+                  zu fehlerhaften Zeilen.
                 </li>
                 <li>
-                  Dashboard: neue Kacheln für Marktplatz-Leads & Website-Leads.
+                  Reporting: Filter nach Portal, Objektart und Zeitraum ergänzt.
                 </li>
                 <li>
-                  Diverse UI-Verbesserungen in Angebot & Rechnungsstellung.
+                  Diverse UI-Verbesserungen in der Inserats-Liste & Detailansicht.
                 </li>
               </ul>
             </div>
@@ -435,16 +439,18 @@ export default function StatusPage() {
                 </h4>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
                   <li>
-                    Verbesserte Filter & Tags im Marktplatz für Agentur-Spezialisierungen.
+                    Erweiterte Filter für Inserate (Status, Portal, Vermarktungsart).
                   </li>
                   <li>
-                    Website-Modul: zusätzliche Form-Felder & Double-Opt-in-Option.
+                    Zusätzliche Benachrichtigungsoptionen (z. B. nur qualifizierte
+                    Leads).
                   </li>
                   <li>
-                    CRM: Massenaktionen für Statuswechsel & Zuweisungen.
+                    Verbesserte Protokollansicht für Portal-Übertragungen
+                    (Monitoring & Logs).
                   </li>
                   <li>
-                    Logistik: klarere Übersicht für Fälligkeiten & Prüfungen.
+                    Feineres Rechte-Management für Teams (z. B. Marketing vs. Vertrieb).
                   </li>
                 </ul>
               </div>
@@ -456,17 +462,18 @@ export default function StatusPage() {
                 </h4>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
                   <li>
-                    Analytics: Funnel-Reporting von Marktplatz/Website bis Abschluss.
+                    Erweiterung um weitere Portale & Exportformate.
                   </li>
                   <li>
-                    Integrationen: Export/Sync zu Buchhaltungs-Tools (z. B. DATEV-ready
-                    CSV).
+                    Lead-Routing-Regeln (z. B. automatische Zuweisung nach Region,
+                    Objektart oder Portal).
                   </li>
                   <li>
-                    Rollen & Rechte für größere Teams (Sales, Projekt, Finance).
+                    Tiefergehende Reporting-Ansichten mit Trichter von Inserat bis
+                    Abschluss.
                   </li>
                   <li>
-                    Erweiterte Logistik-Ansicht für Fahrzeuge, Lager & Equipment.
+                    API-Zugriff für eigene Website-Formulare & individuelle Integrationen.
                   </li>
                 </ul>
               </div>
@@ -478,17 +485,19 @@ export default function StatusPage() {
                 </h4>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
                   <li>
-                    GLENO Mobile App (iOS & Android) für Leads, Tasks & Zeiten.
+                    Maklernull Mobile App (iOS & Android) für Leads, Aufgaben &
+                    Freigaben von unterwegs.
                   </li>
                   <li>
-                    KI-Co-Pilot für Angebotserstellung & Antwortvorschläge auf
-                    Marktplatz-Anfragen.
+                    KI-Unterstützung für Exposé-Texte, Bildauswahl und
+                    Preisempfehlungen.
                   </li>
                   <li>
-                    Multi-Workspace & Mandantenfähigkeit für Gruppen/Netzwerke.
+                    Multi-Account/Mandantenfähigkeit für Gruppen, Büros & Netzwerke.
                   </li>
                   <li>
-                    Vertiefte Logistik-Features: Routenplanung & Ressourcenplanung.
+                    Tiefere Analytics zu Portal-Performance und
+                    Vermarktungsgeschwindigkeit.
                   </li>
                 </ul>
               </div>
@@ -496,7 +505,7 @@ export default function StatusPage() {
 
             <p className="mt-4 text-xs text-slate-500">
               Roadmap ohne Garantie; Prioritäten können sich basierend auf Feedback
-              unserer GLENO-Partner verschieben.
+              unserer Maklernull-Nutzerinnen und -Nutzer verschieben.
             </p>
           </div>
         </section>

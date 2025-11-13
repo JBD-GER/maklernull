@@ -23,7 +23,7 @@ export default function GlobalCTA() {
           transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
         />
 
-        {/* Feiner Lichtstreifen oben (bleibt in der Card) */}
+        {/* Feiner Lichtstreifen oben */}
         <motion.div
           aria-hidden
           className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-slate-300/90 to-transparent"
@@ -34,70 +34,92 @@ export default function GlobalCTA() {
         <div className="relative space-y-4">
           {/* Label */}
           <div className="mx-auto inline-flex flex-wrap items-center justify-center gap-2 rounded-full bg-white/98 px-3 py-1 text-[10px] font-medium text-slate-900 ring-1 ring-white/90">
-            <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-white">
-              GLENO
+            <span
+              className="rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-white"
+              style={{ backgroundColor: PRIMARY }}
+            >
+              Maklernull
             </span>
-            <span>CRM</span>
+            <span>Verkauf</span>
             <span className="text-slate-300">•</span>
-            <span>Website</span>
+            <span>Vermietung</span>
             <span className="text-slate-300">•</span>
-            <span>Marktplatz</span>
+            <span>Inserate auf Portalen</span>
             <span className="hidden text-slate-500 sm:inline">
-              | Ein Login. Deine komplette Wertschöpfung.
+              | Ihre Immobilie ohne Maklerprovision.
             </span>
           </div>
 
           {/* Headline */}
           <h2 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-            Du willst weniger Chaos
+            Sie wollen verkaufen oder vermieten,
             <span className="block text-slate-900">
-              und mehr Klarheit im Alltag?
+              aber keinen klassischen Makler beauftragen?
             </span>
           </h2>
 
           {/* Subline */}
           <p className="mx-auto max-w-2xl text-sm leading-relaxed text-slate-700 sm:text-base">
-            GLENO bündelt Anfragen, Angebote, Projekte, Mitarbeiter, Dokumente und deine Website
-            in einem ruhigen, aufgeräumten System. Kein Tool-Hopping, keine Zettel, kein Stress.
+            Mit Maklernull inserieren Sie Ihre Immobilie auf großen Portalen,
+            erhalten geprüfte Anfragen, ein professionelles Exposé und persönliche
+            Unterstützung – zu einem einmaligen Paketpreis, ganz ohne Abo
+            oder Maklercourtage.
           </p>
 
           {/* Key-Punkte */}
           <div className="mx-auto mt-3 flex flex-wrap justify-center gap-3 text-[10px] font-medium text-slate-600 sm:text-[11px]">
             <span className="rounded-full bg-white/98 px-3 py-1 ring-1 ring-slate-100">
-              In Minuten startklar
+              Einmalige Pakete – kein Abo
             </span>
             <span className="rounded-full bg-white/98 px-3 py-1 ring-1 ring-slate-100">
-              7 Tage kostenlos testen
+              Inserate auf bis zu 4 Portalen
             </span>
             <span className="rounded-full bg-white/98 px-3 py-1 ring-1 ring-slate-100">
-              Keine Kreditkarte nötig
+              Geprüfte Anfragen statt Anruf-Chaos
             </span>
             <span className="rounded-full bg-white/98 px-3 py-1 ring-1 ring-slate-100">
-              Server &amp; Hosting in der EU
+              Persönlicher Ansprechpartner
             </span>
           </div>
 
           {/* CTA */}
-          <div className="pt-5">
+          <div className="pt-5 flex flex-wrap items-center justify-center gap-3">
             <motion.div
               whileHover={{ scale: 1.02 }}
               transition={{ duration: 0.18 }}
             >
               <Link
-                href="/registrieren"
-                aria-label="Starte kostenlos mit GLENO"
+                href="/preis"
+                aria-label="Preise und Pakete von Maklernull ansehen"
                 className="inline-flex items-center justify-center gap-2 rounded-full px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow-[0_14px_40px_rgba(15,23,42,0.45)] transition hover:shadow-[0_18px_55px_rgba(15,23,42,0.6)] sm:text-sm"
                 style={{
                   backgroundImage: 'linear-gradient(to right, #020817, #0f172a)',
                 }}
               >
-                <span>Starte kostenlos</span>
+                <span>Preise &amp; Pakete ansehen</span>
               </Link>
             </motion.div>
+
+            <Link
+              href="/support"
+              className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white/95 px-6 py-3 text-[11px] font-medium text-slate-900 ring-1 ring-white/80 backdrop-blur hover:bg-white sm:text-sm"
+            >
+              Oder kurz beraten lassen
+            </Link>
           </div>
 
           <p className="text-[9px] text-slate-500 sm:text-[10px]">
-            Monatlich kündbar. Keine Einrichtungsgebühr. Volle Kontrolle ab Tag eins.
+            Keine automatische Verlängerung. Alle Preise inkl. MwSt.{' '}
+            <span className="hidden sm:inline">
+              Unsicher, welches Paket passt? Rufen Sie uns an unter{' '}
+              <a
+                href="tel:+4950353169999"
+                className="font-medium text-slate-900 underline decoration-slate-300 underline-offset-2"
+              >
+                05035 3169999
+              </a>
+              .
+            </span>
           </p>
         </div>
       </motion.div>

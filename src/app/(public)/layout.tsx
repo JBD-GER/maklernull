@@ -4,16 +4,16 @@ import Footer from './components/Footer'
 import CookieBanner from './components/CookieBanner'
 import { MaybeChrome, MainWithOffset } from './components/RouteChrome' // <-- NEU
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://gleno.de'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://maklernull.de'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'GLENO – Marktplatz, CRM & Website in einem',
-    template: '%s | GLENO',
+    default: 'Maklernull – Ohne Makler verkaufen',
+    template: '%s | Maklernull',
   },
   description:
-    'GLENO vereint Marktplatz, CRM und Website in einer Plattform.',
+    'Maklernull - Immobilien ohne Makler verkaufen',
   alternates: { canonical: '/' },
   robots: {
     index: true,
@@ -29,17 +29,17 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: siteUrl,
-    siteName: 'GLENO',
-    title: 'GLENO – Marktplatz, CRM & Website in einem',
+    siteName: 'Maklernull',
+    title: 'Maklernull – Ohne Makler verkaufen',
     description:
       'Angebote, Aufträge, Rechnungen & Projekte – alles in einem Tool.',
     images: [
-      { url: '/og.png', width: 1200, height: 630, alt: 'GLENO' },
+      { url: '/og.png', width: 1200, height: 630, alt: 'Maklernull' },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'GLENO – Marktplatz, CRM & Website in einem',
+    title: 'Maklernull – Ohne Makler verkaufen',
     description:
       'Angebote, Aufträge, Rechnungen & Projekte – alles in einem Tool.',
     images: ['/og.png'],
