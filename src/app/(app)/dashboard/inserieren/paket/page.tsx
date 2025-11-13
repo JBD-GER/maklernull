@@ -264,7 +264,7 @@ export default function PaketAuswahlPage() {
     const runtimeMonths = pkg?.runtimeMonths ?? 1
 
     try {
-      const res = await fetch('/api/listings/checkout', {
+      const res = await fetch('/api/billing/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

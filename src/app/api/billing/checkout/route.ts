@@ -1,3 +1,4 @@
+// src/app/api/listings/checkout/route.ts
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
@@ -89,6 +90,100 @@ async function getListingStripePriceId(packageCode: string): Promise<string> {
   return resolvePriceId(productOrPriceId)
 }
 
+/* -------- Profil → Stripe-Customer (für Rechnung) -------- */
+
+function toIso2(country?: string | null): string | undefined {
+  if (!country) return undefined
+  const c = country.trim().toLowerCase()
+  const map: Record<string, string> = {
+    de: 'DE',
+    deu: 'DE',
+    deutschland: 'DE',
+    germany: 'DE',
+    at: 'AT',
+    aut: 'AT',
+    österreich: 'AT',
+    oesterreich: 'AT',
+    austria: 'AT',
+    ch: 'CH',
+    che: 'CH',
+    schweiz: 'CH',
+    switzerland: 'CH',
+  }
+  if (map[c]) return map[c]
+  if (/^[A-Za-z]{2}$/.test(country)) return country.toUpperCase()
+  return undefined
+}
+
+type ProfileForStripe = {
+  email?: string | null
+  first_name?: string | null
+  last_name?: string | null
+  company_name?: string | null
+  street?: string | null
+  house_number?: string | null
+  postal_code?: string | null
+  city?: string | null
+  country?: string | null
+  vat_number?: string | null
+  stripe_customer_id?: string | null
+}
+
+async function syncCustomerDataToStripe(customerId: string, p: ProfileForStripe) {
+  const iso = toIso2(p.country)
+  const line1 = [p.street, p.house_number].filter(Boolean).join(' ').trim() || undefined
+
+  const addr: Stripe.AddressParam | undefined =
+    iso && (line1 || p.postal_code || p.city)
+      ? {
+          line1,
+          postal_code: p.postal_code || undefined,
+          city: p.city || undefined,
+          country: iso,
+        }
+      : undefined
+
+  const contactName = [p.first_name, p.last_name].filter(Boolean).join(' ').trim() || undefined
+  const displayName =
+    p.company_name && p.company_name.trim().length > 1
+      ? p.company_name
+      : contactName || undefined
+
+  await stripe.customers.update(customerId, {
+    name: displayName,
+    email: p.email || undefined,
+    address: addr,
+    shipping: addr && contactName ? { name: contactName, address: addr } : undefined,
+    invoice_settings:
+      p.company_name && contactName
+        ? { custom_fields: [{ name: 'Kontakt', value: contactName }] }
+        : undefined,
+    metadata: {
+      contact_name: contactName || '',
+      company_name: p.company_name || '',
+    },
+  })
+
+  // VAT als Tax ID
+  if (p.vat_number && p.vat_number.trim()) {
+    const vat = p.vat_number.trim()
+    try {
+      const existing = await stripe.customers.listTaxIds(customerId, { limit: 20 })
+      const same = existing.data.find(
+        (t) => t.type === 'eu_vat' && t.value?.toUpperCase() === vat.toUpperCase()
+      )
+      if (!same) {
+        await stripe.customers.createTaxId(customerId, {
+          type: 'eu_vat',
+          value: vat,
+        })
+      }
+    } catch (e) {
+      console.warn('[stripe] createTaxId failed (ignored):', (e as any)?.message)
+    }
+  }
+}
+
 /* ----------------- Handler ----------------- */
 
 export async function POST(req: Request) {
@@ -112,21 +207,77 @@ export async function POST(req: Request) {
   }
 
   // 1) Listing holen & Ownership checken
-  const { data: listing, error } = await admin
+  const { data: listing, error: listingError } = await admin
     .from('listings')
     .select('*')
     .eq('id', listingId)
     .eq('user_id', user.id)
     .single()
 
-  if (error || !listing) {
+  if (listingError || !listing) {
     return NextResponse.json(
       { error: 'Inserat nicht gefunden' },
       { status: 404 }
     )
   }
 
-  // 2) Paket & Laufzeit im Listing speichern
+  // 2) Profil holen → für Rechnung / Customer-Daten
+  const { data: profile, error: profileError } = await admin
+    .from('profiles')
+    .select(
+      `
+      email,
+      first_name,
+      last_name,
+      company_name,
+      street,
+      house_number,
+      postal_code,
+      city,
+      country,
+      vat_number,
+      stripe_customer_id
+    `
+    )
+    .eq('id', user.id)
+    .single()
+
+  if (profileError || !profile) {
+    return NextResponse.json(
+      { error: 'Profil nicht gefunden – bitte Profil zuerst vervollständigen.' },
+      { status: 400 }
+    )
+  }
+
+  // 3) Stripe-Customer sicherstellen (hier wird auch die E-Mail fest verdrahtet)
+  let customerId: string | null = profile.stripe_customer_id || null
+
+  if (!customerId) {
+    const cust = await stripe.customers.create({
+      email: profile.email || undefined,
+      metadata: { supabase_user_id: user.id },
+    })
+    customerId = cust.id
+
+    await admin
+      .from('profiles')
+      .update({ stripe_customer_id: customerId })
+      .eq('id', user.id)
+  } else {
+    // sicherheitshalber User-ID mitschreiben
+    try {
+      await stripe.customers.update(customerId, {
+        metadata: { supabase_user_id: user.id },
+      })
+    } catch {
+      // ignore
+    }
+  }
+
+  // 4) Profil-Daten (Name, Firma, Adresse, USt) zum Customer schieben
+  await syncCustomerDataToStripe(customerId!, profile as ProfileForStripe)
+
+  // 5) Paket & Laufzeit im Listing speichern
   await admin
     .from('listings')
     .update({
@@ -136,7 +287,7 @@ export async function POST(req: Request) {
     })
     .eq('id', listingId)
 
-  // 3) Passende Stripe-Price-ID ermitteln (prod_ → price_, falls nötig)
+  // 6) Passende Stripe-Price-ID ermitteln (prod_ → price_, falls nötig)
   let priceId: string
   try {
     priceId = await getListingStripePriceId(packageCode)
@@ -150,32 +301,55 @@ export async function POST(req: Request) {
 
   const baseUrl = getBaseUrl(req)
 
-  // 4) Checkout-Session (mode: payment) erstellen
+  // 7) Checkout-Session (mode: payment) erstellen
   try {
     const session = await stripe.checkout.sessions.create({
-  mode: 'payment',
-  line_items: [{ price: priceId, quantity: 1 }],
-  customer_email:
-    listing.contact_email || user.email || undefined,
-  metadata: {
-    kind: 'listing',
-    listing_id: listing.id,
-    package_code: packageCode,
-    runtime_months: runtimeMonths ? String(runtimeMonths) : '',
-  },
-  payment_intent_data: {
-    metadata: {
-      kind: 'listing',
-      listing_id: listing.id,
-      package_code: packageCode,
-      runtime_months: runtimeMonths ? String(runtimeMonths) : '',
-    },
-  },
-  // ⬇️ HIER neu:
-  success_url: `${baseUrl}/dashboard/inserieren/erfolg?listing=${listing.id}`,
-  cancel_url: `${baseUrl}/dashboard/inserieren?payment=cancel&listing=${listing.id}`,
-})
+      mode: 'payment',
+      customer: customerId!, // 👉 E-Mail kommt aus dem Customer und ist im Checkout nicht mehr änderbar
+      line_items: [{ price: priceId, quantity: 1 }],
 
+      // Rechnung automatisch erstellen lassen
+      invoice_creation: {
+        enabled: true,
+        invoice_data: {
+          description: `Maklernull Inseratspaket (${packageCode}) für Listing #${listing.id}`,
+          metadata: {
+            kind: 'listing',
+            listing_id: listing.id,
+            package_code: packageCode,
+            user_id: user.id,
+          },
+        },
+      },
+
+      // Meta für PaymentIntent / Events
+      metadata: {
+        kind: 'listing',
+        listing_id: listing.id,
+        package_code: packageCode,
+        runtime_months: runtimeMonths ? String(runtimeMonths) : '',
+        user_id: user.id,
+      },
+      payment_intent_data: {
+        metadata: {
+          kind: 'listing',
+          listing_id: listing.id,
+          package_code: packageCode,
+          runtime_months: runtimeMonths ? String(runtimeMonths) : '',
+          user_id: user.id,
+        },
+      },
+
+      // Optional: falls du Billing-Adresse noch einsammeln oder automatisch updaten willst
+      billing_address_collection: 'auto',
+      customer_update: {
+        address: 'auto',
+        name: 'auto',
+      },
+
+      success_url: `${baseUrl}/dashboard/inserieren/erfolg?listing=${listing.id}`,
+      cancel_url: `${baseUrl}/dashboard/inserieren?payment=cancel&listing=${listing.id}`,
+    })
 
     return NextResponse.json({ url: session.url }, { status: 200 })
   } catch (e: any) {
