@@ -1,4 +1,3 @@
-// src/app/dashboard/inserieren/paket/page.tsx
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -326,7 +325,9 @@ export default function PaketAuswahlPage() {
 
         <button
           type="button"
-          onClick={() => router.push('/dashboard/inserieren')}
+          onClick={() =>
+            router.push(`/dashboard/inserieren?listing=${listingId}`)
+          }
           className="inline-flex items-center justify-center rounded-full border border-white/70 bg-white/90 px-4 py-2 text-xs font-medium text-slate-700 shadow-sm backdrop-blur-xl hover:border-slate-300 hover:bg-white"
         >
           ← Inserat bearbeiten

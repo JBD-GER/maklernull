@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 type TransactionType = 'sale' | 'rent'
 type UsageType = 'residential' | 'commercial'
@@ -40,7 +40,13 @@ const STEPS = ['Basis', 'Adresse', 'Details', 'Preis & Kontakt']
 
 export default function InserierenPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+
   const [step, setStep] = useState(0)
+
+  // 🔥 Listing-ID (für Draft-Update statt immer neuem Insert)
+  const [listingId, setListingId] = useState<string | null>(null)
+  const [initialLoading, setInitialLoading] = useState(false)
 
   const [transactionType, setTransactionType] =
     useState<TransactionType>('sale')
@@ -81,8 +87,128 @@ export default function InserierenPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
+  // UI-Status-Anzeige (entwurf / aktiv / deaktiviert / vermarktet)
+  const [status, setStatus] = useState<string>('entwurf')
+
   const isLastStep = step === STEPS.length - 1
   const isFirstStep = step === 0
+
+  // 🔥 Beim Öffnen mit ?listing=ID bestehenden Datensatz laden und Formular befüllen
+  useEffect(() => {
+    const idFromUrl = searchParams.get('listing')
+    if (!idFromUrl) return
+
+    const loadListing = async () => {
+      setInitialLoading(true)
+      setError(null)
+      setSuccess(null)
+      try {
+        const res = await fetch(`/api/listings/${idFromUrl}`, {
+          method: 'GET',
+          cache: 'no-store',
+        })
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}))
+          throw new Error(data.error || 'Inserat konnte nicht geladen werden.')
+        }
+
+        const { listing } = await res.json()
+
+        if (!listing) {
+          throw new Error('Inserat nicht gefunden.')
+        }
+
+        // ID merken – ab jetzt wird nur noch aktualisiert, kein neues Inserat
+        setListingId(listing.id)
+
+        // Status (kommt bereits als UI-Status aus der API, z.B. "entwurf")
+        setStatus(listing.status || 'entwurf')
+
+        // Basisangaben
+        setTransactionType(
+          (listing.transactionType as TransactionType) || 'sale'
+        )
+        setUsageType((listing.usageType as UsageType) || 'residential')
+
+        const category =
+          listing.objectCategory ||
+          listing.saleCategory ||
+          listing.rentCategory ||
+          ''
+
+        if (listing.transactionType === 'sale') {
+          setSaleCategory(category)
+          setRentCategory('')
+        } else if (listing.transactionType === 'rent') {
+          setRentCategory(category)
+          setSaleCategory('')
+        } else {
+          setSaleCategory(category)
+          setRentCategory(category)
+        }
+
+        setTitle(listing.title || '')
+        setDescription(listing.description || '')
+
+        // Adresse
+        setStreet(listing.street || '')
+        setHouseNumber(listing.houseNumber || '')
+        setPostalCode(listing.postalCode || '')
+        setCity(listing.city || '')
+        setCountry(listing.country || 'Deutschland')
+
+        // Details (Numerics -> String)
+        setLivingArea(
+          listing.livingArea !== null && listing.livingArea !== undefined
+            ? String(listing.livingArea)
+            : ''
+        )
+        setLandArea(
+          listing.landArea !== null && listing.landArea !== undefined
+            ? String(listing.landArea)
+            : ''
+        )
+        setRooms(
+          listing.rooms !== null && listing.rooms !== undefined
+            ? String(listing.rooms)
+            : ''
+        )
+        setFloor(listing.floor || '')
+        setTotalFloors(listing.totalFloors || '')
+        setYearBuilt(
+          listing.yearBuilt !== null && listing.yearBuilt !== undefined
+            ? String(listing.yearBuilt)
+            : ''
+        )
+
+        // Preis & Kontakt
+        setPrice(
+          listing.price !== null && listing.price !== undefined
+            ? String(listing.price)
+            : ''
+        )
+        setCurrency(listing.currency || 'EUR')
+        setAvailability(listing.availability || '')
+        setIsFurnished(!!listing.isFurnished)
+
+        setContactName(listing.contactName || '')
+        setContactEmail(listing.contactEmail || '')
+        setContactPhone(listing.contactPhone || '')
+
+        // Einwilligungen setzen wir bewusst nicht aus der DB,
+        // damit der Nutzer sie aktiv bestätigt.
+        setAcceptTerms(false)
+        setAcceptPrivacy(false)
+      } catch (e: any) {
+        setError(e.message || 'Fehler beim Laden des Inserats.')
+      } finally {
+        setInitialLoading(false)
+      }
+    }
+
+    loadListing()
+  }, [searchParams])
 
   const canContinue = () => {
     if (step === 0) {
@@ -155,7 +281,7 @@ export default function InserierenPage() {
     status,
   })
 
-  // 👉 Entwurf speichern – ohne Step-Validierung, speichert einfach den aktuellen Stand
+  // 👉 Entwurf speichern – arbeitet mit bestehendem Listing, wenn vorhanden
   const handleSaveDraft = async () => {
     setSavingDraft(true)
     setSubmitting(false)
@@ -163,10 +289,15 @@ export default function InserierenPage() {
     setSuccess(null)
 
     try {
-      const res = await fetch('/api/listings', {
-        method: 'POST',
+      const payload = buildPayload('draft')
+
+      const url = listingId ? `/api/listings/${listingId}` : '/api/listings'
+      const method = listingId ? 'PUT' : 'POST'
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildPayload('draft')),
+        body: JSON.stringify(payload),
       })
 
       if (!res.ok) {
@@ -174,10 +305,19 @@ export default function InserierenPage() {
         throw new Error(data.error || 'Fehler beim Speichern des Entwurfs')
       }
 
-      await res.json()
+      const { listing } = await res.json()
+
+      if (listing?.id) {
+        setListingId(listing.id)
+      }
+      if (listing?.status) {
+        setStatus(listing.status)
+      } else {
+        setStatus('entwurf')
+      }
 
       setSuccess(
-        'Entwurf gespeichert. Du findest dein Inserat später im Bereich „Meine Inserate“.'
+        'Entwurf gespeichert. Du findest dein Inserat im Bereich „Inserate“ und kannst hier jederzeit weiterbearbeiten.'
       )
     } catch (e: any) {
       setError(e.message || 'Unbekannter Fehler beim Speichern des Entwurfs')
@@ -194,10 +334,15 @@ export default function InserierenPage() {
     setSuccess(null)
 
     try {
-      const res = await fetch('/api/listings', {
-        method: 'POST',
+      const payload = buildPayload('pending_payment')
+
+      const url = listingId ? `/api/listings/${listingId}` : '/api/listings'
+      const method = listingId ? 'PUT' : 'POST'
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildPayload('pending_payment')),
+        body: JSON.stringify(payload),
       })
 
       if (!res.ok) {
@@ -207,7 +352,14 @@ export default function InserierenPage() {
 
       const { listing } = await res.json()
 
-      // ⬇️ HIER angepasst: transactionType mitgeben
+      if (listing?.id) {
+        setListingId(listing.id)
+      }
+      if (listing?.status) {
+        setStatus(listing.status)
+      }
+
+      // Weiter zur Paketauswahl – Listing-ID & transactionType mitgeben
       router.push(
         `/dashboard/inserieren/paket?listing=${listing.id}&kind=${transactionType}`
       )
@@ -217,6 +369,37 @@ export default function InserierenPage() {
       setSubmitting(false)
     }
   }
+
+  const statusChip = (() => {
+    const normalized = (status || 'entwurf').toLowerCase()
+    if (normalized === 'aktiv') {
+      return {
+        label: 'Aktiv',
+        className:
+          'bg-emerald-50 text-emerald-700 ring-emerald-200',
+      }
+    }
+    if (normalized === 'deaktiviert') {
+      return {
+        label: 'Deaktiviert',
+        className:
+          'bg-slate-50 text-slate-600 ring-slate-200',
+      }
+    }
+    if (normalized === 'vermarktet') {
+      return {
+        label: 'Vermarktet',
+        className:
+          'bg-indigo-50 text-indigo-700 ring-indigo-200',
+      }
+    }
+    // Standard + auch für pending_payment (kommt als "entwurf" aus der API)
+    return {
+      label: 'Entwurf',
+      className:
+        'bg-amber-50 text-amber-700 ring-amber-200',
+    }
+  })()
 
   return (
     <section className="mx-auto max-w-5xl space-y-6 px-4 pb-10 pt-4">
@@ -230,11 +413,18 @@ export default function InserierenPage() {
             Erstelle Schritt für Schritt dein Exposé. Später übernimmt die
             Maklernull Bridge die Übertragung zu ImmoScout24, Immowelt und Kleinanzeigen.
           </p>
+          {initialLoading && (
+            <p className="mt-1 text-xs text-slate-500">
+              Bestehendes Inserat wird geladen …
+            </p>
+          )}
         </div>
         <div className="rounded-2xl border border-white/60 bg-white/80 px-4 py-2 text-xs text-slate-600 shadow-sm backdrop-blur-xl">
           Status:{' '}
-          <span className="rounded-full bg-amber-50 px-2 py-0.5 text-amber-700 ring-1 ring-amber-200">
-            Entwurf
+          <span
+            className={`rounded-full px-2 py-0.5 ring-1 ${statusChip.className}`}
+          >
+            {statusChip.label}
           </span>
         </div>
       </div>
@@ -375,11 +565,11 @@ export default function InserierenPage() {
             </button>
 
             <div className="flex flex-1 items-center justify-end gap-3">
-              {/* Neuer Button: Entwurf */}
+              {/* Entwurf speichern */}
               <button
                 type="button"
                 onClick={handleSaveDraft}
-                disabled={savingDraft}
+                disabled={savingDraft || initialLoading}
                 className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {savingDraft ? 'Speichere Entwurf...' : 'Als Entwurf speichern'}
@@ -389,7 +579,7 @@ export default function InserierenPage() {
                 <button
                   type="button"
                   onClick={handleNext}
-                  disabled={!canContinue()}
+                  disabled={!canContinue() || initialLoading}
                   className="inline-flex items-center justify-center rounded-full border border-slate-900 bg-slate-900 px-5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Weiter
@@ -400,7 +590,7 @@ export default function InserierenPage() {
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  disabled={!canContinue() || submitting}
+                  disabled={!canContinue() || submitting || initialLoading}
                   className="inline-flex items-center justify-center rounded-full border border-slate-900 bg-slate-900 px-5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {submitting ? 'Speichere...' : 'Inserat speichern'}
