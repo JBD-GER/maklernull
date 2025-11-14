@@ -241,7 +241,6 @@ export default function PaketAuswahlPage() {
   const listingId = searchParams.get('listing')
   const kindParam = searchParams.get('kind') as 'sale' | 'rent' | null
 
-  // ⬇️ Initiales Segment: sale/rent aus Query – sonst 'test'
   const [segment, setSegment] = useState<Segment>(() => {
     if (kindParam === 'sale' || kindParam === 'rent') return kindParam
     return 'test'
@@ -251,7 +250,6 @@ export default function PaketAuswahlPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Wenn keine listingId vorhanden → zurück zur Inserats-Seite
   useEffect(() => {
     if (!listingId) {
       router.replace('/dashboard/inserieren')
@@ -270,7 +268,7 @@ export default function PaketAuswahlPage() {
     const runtimeMonths = pkg?.runtimeMonths ?? 1
 
     try {
-      const res = await fetch('/api/billing/checkout', {
+      const res = await fetch('/api/listings/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -299,7 +297,7 @@ export default function PaketAuswahlPage() {
 
   return (
     <section className="relative mx-auto max-w-6xl px-4 pb-12 pt-8">
-      {/* weicher Hintergrund mit Glow */}
+      {/* Hintergrund */}
       <div
         aria-hidden
         className="pointer-events-none absolute left-1/2 top-[-18vh] -z-10 h-[140vh] w-[200vw] -translate-x-1/2"
@@ -336,7 +334,7 @@ export default function PaketAuswahlPage() {
       </div>
 
       {/* Segment-Tabs */}
-      <div className="mb-6 rounded-3xl border border-white/70 bg.white/90 p-2 text-xs shadow-[0_18px_40px_rgba(15,23,42,0.04)] backdrop-blur-2xl">
+      <div className="mb-6 rounded-3xl border border-white/70 bg-white/90 p-2 text-xs shadow-[0_18px_40px_rgba(15,23,42,0.04)] backdrop-blur-2xl">
         <div className="flex gap-2">
           {(['sale', 'rent', 'test'] as Segment[]).map((s) => {
             const active = s === segment
