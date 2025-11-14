@@ -58,8 +58,8 @@ const NAV_ITEMS: NavItem[] = [
         icon: ChatBubbleLeftRightIcon,
       },
       {
-        href: '/dashboard/inserate/terminkalender',
-        label: 'Terminkalender',
+        href: '/dashboard/inserate/termine',
+        label: 'Termine',
         icon: CalendarDaysIcon,
       },
     ],

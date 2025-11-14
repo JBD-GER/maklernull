@@ -9,13 +9,16 @@ type Booking = {
   created_at: string
   product_name: string
   description?: string | null
-  gross_amount: number // in Cent oder Euro – siehe fmtCurrency-Hinweis
+  gross_amount: number // wir liefern aus der API schon Euro → keine /100 nötig
   currency: string
   status: BookingStatus
   invoice_number?: string | null
   invoice_url?: string | null
   period_from?: string | null
   period_to?: string | null
+  // neu:
+  listing_id?: string | null
+  listing_title?: string | null
 }
 
 export default function AbonnementPage() {
@@ -45,10 +48,14 @@ export default function AbonnementPage() {
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+  }, [])
 
   const fmtDate = (iso?: string | null) =>
-    iso ? new Date(iso).toLocaleDateString('de-DE', { dateStyle: 'medium' }) : '—'
+    iso
+      ? new Date(iso).toLocaleDateString('de-DE', { dateStyle: 'medium' })
+      : '—'
 
   const fmtDateTime = (iso?: string | null) =>
     iso
@@ -58,7 +65,6 @@ export default function AbonnementPage() {
         })
       : '—'
 
-  // ⚠️ Wenn gross_amount in Cent gespeichert ist, dann /100 benutzen.
   const fmtCurrency = (amount: number, currency: string) =>
     new Intl.NumberFormat('de-DE', {
       style: 'currency',
@@ -106,24 +112,25 @@ export default function AbonnementPage() {
     }
     const count = bookings.length
     const totalGross = bookings.reduce((sum, b) => sum + b.gross_amount, 0)
-    const lastBookingAt = bookings
-      .slice()
-      .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))[0]?.created_at ?? null
+    const lastBookingAt =
+      bookings
+        .slice()
+        .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))[0]?.created_at ??
+      null
 
     return { count, totalGross, lastBookingAt }
   }, [bookings])
 
   return (
     <div className="px-4 py-6 text-slate-700 sm:px-6 lg:px-10">
-      {/* ⬇️ kein mx-auto / max-w-5xl mehr → linksbündig wie der Rest des Dashboards */}
       <div className="space-y-6">
-
         {/* Header – Glas-Card */}
         <div className="relative overflow-hidden rounded-3xl border border-white/60 bg-white/70 px-5 py-6 shadow-[0_18px_70px_rgba(15,23,42,0.28)] backdrop-blur-2xl sm:px-7">
           <div
             className="pointer-events-none absolute -top-24 -right-10 h-56 w-56 rounded-full opacity-50"
             style={{
-              background: 'radial-gradient(circle, rgba(15,23,42,0.45), transparent 60%)',
+              background:
+                'radial-gradient(circle, rgba(15,23,42,0.45), transparent 60%)',
             }}
           />
           <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -132,13 +139,16 @@ export default function AbonnementPage() {
                 Buchungen & Rechnungen
               </h1>
               <p className="mt-1 text-sm text-slate-600">
-                Übersicht über alle getätigten Buchungen, Zahlungsstatus und Rechnungsdokumente.
+                Übersicht über alle getätigten Buchungen, Zahlungsstatus, Rechnungen
+                und – falls vorhanden – zugeordnete Immobilie.
               </p>
             </div>
             <div className="flex flex-col items-end gap-2 text-right text-xs text-slate-500">
               <span className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/80 px-3 py-1 shadow-sm backdrop-blur-xl">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                <span>{summary.count} Buchung{summary.count === 1 ? '' : 'en'}</span>
+                <span>
+                  {summary.count} Buchung{summary.count === 1 ? '' : 'en'}
+                </span>
               </span>
               {summary.lastBookingAt && (
                 <span>
@@ -184,17 +194,10 @@ export default function AbonnementPage() {
                 Alle Buchungen
               </h2>
               <p className="mt-0.5 text-xs text-slate-500">
-                Hier sehen Sie jede einzelne Buchung inkl. Zahlungsstatus und Rechnungslink.
+                Jede Buchung inkl. Zahlungsstatus, Zeitraum, Rechnung und – falls
+                hinterlegt – zugehöriger Immobilie.
               </p>
             </div>
-            {/* Optional: Button für neue Buchung, falls du später Checkout einhängst */}
-            {/* <button
-              type="button"
-              onClick={() => { window.location.href = '/api/billing/checkout-once' }}
-              className="inline-flex items-center justify-center rounded-lg border border-slate-900/20 bg-white px-4 py-2 text-xs font-semibold text-slate-900 shadow-sm hover:bg-slate-50"
-            >
-              Neue Buchung durchführen
-            </button> */}
           </div>
 
           {loading ? (
@@ -222,6 +225,7 @@ export default function AbonnementPage() {
                     <tr className="border-b border-slate-100/70">
                       <th className="px-4 py-3 font-medium">Datum</th>
                       <th className="px-4 py-3 font-medium">Produkt</th>
+                      <th className="px-4 py-3 font-medium">Immobilie</th>
                       <th className="px-4 py-3 font-medium">Zeitraum</th>
                       <th className="px-4 py-3 font-medium">Status</th>
                       <th className="px-4 py-3 font-medium text-right">Betrag</th>
@@ -229,7 +233,7 @@ export default function AbonnementPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {bookings.map(b => (
+                    {bookings.map((b) => (
                       <tr
                         key={b.id}
                         className="border-b border-slate-100/70 last:border-0 hover:bg-slate-50/60"
@@ -253,6 +257,17 @@ export default function AbonnementPage() {
                             <div className="mt-0.5 text-[11px] text-slate-400">
                               Rechnung: {b.invoice_number}
                             </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 align-middle text-xs text-slate-700">
+                          {b.listing_title ? (
+                            <div className="max-w-[160px] truncate">
+                              {b.listing_title}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 text-[11px]">
+                              Keine Immobilie hinterlegt
+                            </span>
                           )}
                         </td>
                         <td className="px-4 py-3 align-middle text-xs text-slate-700">
