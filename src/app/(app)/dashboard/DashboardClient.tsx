@@ -166,7 +166,7 @@ export default function DashboardClient({
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 {/* Primär: Deep-Blue */}
                 <Link
-                  href="/dashboard/inserate/neu"
+                  href="/dashboard/inserieren/"
                   className="inline-flex items-center gap-2 rounded-full border border-slate-900 bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-[0_18px_40px_rgba(15,23,42,0.45)] transition hover:bg-slate-800 hover:border-slate-800"
                 >
                   <PlusIcon className="h-4 w-4" />

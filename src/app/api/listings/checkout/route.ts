@@ -9,32 +9,42 @@ import { createClient } from '@supabase/supabase-js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
+// Service-Role-Client für DB-Schreibzugriffe
 const admin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-/* ----------------- Helpers ----------------- */
+/* -------------------------------------------------------------------------- */
+/*                                Helper-Funktionen                           */
+/* -------------------------------------------------------------------------- */
 
 function getBaseUrl(req: Request) {
   const envUrl = process.env.NEXT_PUBLIC_SITE_URL
   if (envUrl) return envUrl
+
   const host =
     req.headers.get('x-forwarded-host') ??
     req.headers.get('host') ??
     'localhost:3000'
+
   const proto =
     req.headers.get('x-forwarded-proto') ??
     (host.startsWith('localhost') ? 'http' : 'https')
+
   return `${proto}://${host}`
 }
 
-// prod_ → default_price (price_) auflösen – gleiches Prinzip wie in deiner billing-Route
+// prod_ → default_price (price_) auflösen
 async function resolvePriceId(id: string) {
   if (!id) throw new Error('Price-ID fehlt')
+
   if (id.startsWith('price_')) return id
+
   if (id.startsWith('prod_')) {
-    const product = await stripe.products.retrieve(id, { expand: ['default_price'] })
+    const product = await stripe.products.retrieve(id, {
+      expand: ['default_price'],
+    })
     const dp = product.default_price as string | Stripe.Price | null
     const priceId = typeof dp === 'string' ? dp : dp?.id
     if (!priceId) {
@@ -42,11 +52,11 @@ async function resolvePriceId(id: string) {
     }
     return priceId
   }
+
   throw new Error('Ungültige Stripe-ID: muss mit price_ oder prod_ beginnen')
 }
 
-// Mapping: Paket-Code → ENV-Variable
-// (VK/VM + BASIS/PREMIUM/TOP + 1/2/3 Monate)
+// Mapping: Paket-Code → ENV-Variable (price_ oder prod_)
 const LISTING_PRODUCT_IDS: Record<string, string | undefined> = {
   // Verkauf
   VK_BASIS_1: process.env.STRIPE_PRICE_VK_BASIS_1,
@@ -131,7 +141,8 @@ type ProfileForStripe = {
 
 async function syncCustomerDataToStripe(customerId: string, p: ProfileForStripe) {
   const iso = toIso2(p.country)
-  const line1 = [p.street, p.house_number].filter(Boolean).join(' ').trim() || undefined
+  const line1 =
+    [p.street, p.house_number].filter(Boolean).join(' ').trim() || undefined
 
   const addr: Stripe.AddressParam | undefined =
     iso && (line1 || p.postal_code || p.city)
@@ -143,7 +154,9 @@ async function syncCustomerDataToStripe(customerId: string, p: ProfileForStripe)
         }
       : undefined
 
-  const contactName = [p.first_name, p.last_name].filter(Boolean).join(' ').trim() || undefined
+  const contactName =
+    [p.first_name, p.last_name].filter(Boolean).join(' ').trim() || undefined
+
   const displayName =
     p.company_name && p.company_name.trim().length > 1
       ? p.company_name
@@ -153,7 +166,8 @@ async function syncCustomerDataToStripe(customerId: string, p: ProfileForStripe)
     name: displayName,
     email: p.email || undefined,
     address: addr,
-    shipping: addr && contactName ? { name: contactName, address: addr } : undefined,
+    shipping:
+      addr && contactName ? { name: contactName, address: addr } : undefined,
     invoice_settings:
       p.company_name && contactName
         ? { custom_fields: [{ name: 'Kontakt', value: contactName }] }
@@ -168,9 +182,12 @@ async function syncCustomerDataToStripe(customerId: string, p: ProfileForStripe)
   if (p.vat_number && p.vat_number.trim()) {
     const vat = p.vat_number.trim()
     try {
-      const existing = await stripe.customers.listTaxIds(customerId, { limit: 20 })
+      const existing = await stripe.customers.listTaxIds(customerId, {
+        limit: 20,
+      })
       const same = existing.data.find(
-        (t) => t.type === 'eu_vat' && t.value?.toUpperCase() === vat.toUpperCase()
+        (t) =>
+          t.type === 'eu_vat' && t.value?.toUpperCase() === vat.toUpperCase()
       )
       if (!same) {
         await stripe.customers.createTaxId(customerId, {
@@ -184,7 +201,9 @@ async function syncCustomerDataToStripe(customerId: string, p: ProfileForStripe)
   }
 }
 
-/* ----------------- Handler ----------------- */
+/* -------------------------------------------------------------------------- */
+/*                                   Handler                                  */
+/* -------------------------------------------------------------------------- */
 
 export async function POST(req: Request) {
   const supabase = await supabaseServer()
@@ -244,12 +263,15 @@ export async function POST(req: Request) {
 
   if (profileError || !profile) {
     return NextResponse.json(
-      { error: 'Profil nicht gefunden – bitte Profil zuerst vervollständigen.' },
+      {
+        error:
+          'Profil nicht gefunden – bitte Profil zuerst im Bereich "Einstellungen" vervollständigen.',
+      },
       { status: 400 }
     )
   }
 
-  // 3) Stripe-Customer sicherstellen (hier wird auch die E-Mail fest verdrahtet)
+  // 3) Stripe-Customer sicherstellen
   let customerId: string | null = profile.stripe_customer_id || null
 
   if (!customerId) {
@@ -283,11 +305,11 @@ export async function POST(req: Request) {
     .update({
       package_code: packageCode,
       runtime_months: runtimeMonths ?? null,
-      status: 'pending_payment',
+      status: 'pending_payment', // Zahlung ist der nächste Schritt
     })
     .eq('id', listingId)
 
-  // 6) Passende Stripe-Price-ID ermitteln (prod_ → price_, falls nötig)
+  // 6) Passende Stripe-Price-ID ermitteln
   let priceId: string
   try {
     priceId = await getListingStripePriceId(packageCode)
@@ -301,11 +323,11 @@ export async function POST(req: Request) {
 
   const baseUrl = getBaseUrl(req)
 
-  // 7) Checkout-Session (mode: payment) erstellen
+  // 7) Checkout-Session (mode: payment) erstellen – EINMALZAHLUNG fürs Inserat
   try {
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
-      customer: customerId!, // 👉 E-Mail kommt aus dem Customer und ist im Checkout nicht mehr änderbar
+      customer: customerId!,
       line_items: [{ price: priceId, quantity: 1 }],
 
       // Rechnung automatisch erstellen lassen
@@ -322,7 +344,7 @@ export async function POST(req: Request) {
         },
       },
 
-      // Meta für PaymentIntent / Events
+      // Meta für PaymentIntent / Webhook
       metadata: {
         kind: 'listing',
         listing_id: listing.id,
@@ -340,7 +362,6 @@ export async function POST(req: Request) {
         },
       },
 
-      // Optional: falls du Billing-Adresse noch einsammeln oder automatisch updaten willst
       billing_address_collection: 'auto',
       customer_update: {
         address: 'auto',
