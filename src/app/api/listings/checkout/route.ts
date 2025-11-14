@@ -240,10 +240,8 @@ export async function POST(req: Request) {
     )
   }
 
-  // 2) Profil holen ODER automatisch anlegen, falls noch keins existiert
-  let profile: ProfileForStripe | null = null
-
-  const { data: existingProfile, error: profileError } = await admin
+  // 2) Profil lesen (falls vorhanden) und mit user.user_metadata mergen
+  const { data: dbProfile, error: profileError } = await admin
     .from('profiles')
     .select(
       `
@@ -261,67 +259,42 @@ export async function POST(req: Request) {
     `
     )
     .eq('id', user.id)
-    .maybeSingle() // gibt null zurück, wenn nichts gefunden
-    // .single() wäre hier strenger und wir müssten Fehlercode prüfen
+    .maybeSingle()
 
-  if (!existingProfile) {
-    // Falls noch kein Profil in der Tabelle ist, automatisch eines anlegen
-    const { data: createdProfile, error: createError } = await admin
-      .from('profiles')
-      .insert({
-        id: user.id,
-        email: user.email ?? '', // NOT NULL in Tabelle
-      })
-      .select(
-        `
-        email,
-        first_name,
-        last_name,
-        company_name,
-        street,
-        house_number,
-        postal_code,
-        city,
-        country,
-        vat_number,
-        stripe_customer_id
-      `
-      )
-      .single()
+  if (profileError) {
+    console.error('[listings/checkout] profile select error:', profileError)
+    return NextResponse.json(
+      { error: 'Profil konnte nicht gelesen werden.' },
+      { status: 500 }
+    )
+  }
 
-    if (createError || !createdProfile) {
-      console.error('[listings/checkout] create profile error:', createError)
-      return NextResponse.json(
-        {
-          error:
-            'Profil konnte nicht automatisch angelegt werden – bitte Profil im Bereich "Einstellungen" einmal speichern.',
-        },
-        { status: 400 }
-      )
-    }
+  const meta = (user.user_metadata || {}) as any
 
-    profile = createdProfile as ProfileForStripe
-  } else {
-    profile = existingProfile as ProfileForStripe
+  const mergedProfile: ProfileForStripe = {
+    email: dbProfile?.email ?? user.email ?? null,
+    first_name: dbProfile?.first_name ?? meta.first_name ?? null,
+    last_name: dbProfile?.last_name ?? meta.last_name ?? null,
+    company_name: dbProfile?.company_name ?? meta.company_name ?? null,
+    street: dbProfile?.street ?? meta.street ?? null,
+    house_number: dbProfile?.house_number ?? meta.house_number ?? null,
+    postal_code: dbProfile?.postal_code ?? meta.postal_code ?? null,
+    city: dbProfile?.city ?? meta.city ?? null,
+    country: dbProfile?.country ?? meta.country ?? null,
+    vat_number: (dbProfile as any)?.vat_number ?? meta.vat_number ?? null,
+    stripe_customer_id: (dbProfile as any)?.stripe_customer_id ?? null,
   }
 
   // 3) Stripe-Customer sicherstellen
-  let customerId: string | null =
-    (profile as any).stripe_customer_id || null
+  let customerId: string | null = mergedProfile.stripe_customer_id || null
 
   if (!customerId) {
     const cust = await stripe.customers.create({
-      email: profile.email || user.email || undefined,
+      email: mergedProfile.email || user.email || undefined,
       metadata: { supabase_user_id: user.id },
     })
     customerId = cust.id
-
-    await admin
-      .from('profiles')
-      .update({ stripe_customer_id: customerId })
-      .eq('id', user.id)
   } else {
-    // sicherheitshalber User-ID mitschreiben
     try {
       await stripe.customers.update(customerId, {
         metadata: { supabase_user_id: user.id },
@@ -332,9 +305,33 @@ export async function POST(req: Request) {
   }
 
   // 4) Profil-Daten (Name, Firma, Adresse, USt) zum Customer schieben
-  await syncCustomerDataToStripe(customerId!, profile as ProfileForStripe)
+  await syncCustomerDataToStripe(customerId!, mergedProfile)
 
-  // 5) Paket & Laufzeit im Listing speichern
+  // 5) Profil in DB upserten/aktualisieren (damit stripe_customer_id sicher sitzt)
+  const upsertPayload = {
+    id: user.id,
+    email: mergedProfile.email || user.email, // NOT NULL
+    first_name: mergedProfile.first_name,
+    last_name: mergedProfile.last_name,
+    company_name: mergedProfile.company_name,
+    street: mergedProfile.street,
+    house_number: mergedProfile.house_number,
+    postal_code: mergedProfile.postal_code,
+    city: mergedProfile.city,
+    country: mergedProfile.country,
+    stripe_customer_id: customerId,
+  }
+
+  const { error: upsertError } = await admin
+    .from('profiles')
+    .upsert(upsertPayload, { onConflict: 'id' })
+
+  if (upsertError) {
+    console.error('[listings/checkout] profile upsert error:', upsertError)
+    // kein Hard-Abbruch mehr: Stripe-Checkout darf trotzdem weiterlaufen
+  }
+
+  // 6) Paket & Laufzeit im Listing speichern
   await admin
     .from('listings')
     .update({
@@ -344,7 +341,7 @@ export async function POST(req: Request) {
     })
     .eq('id', listingId)
 
-  // 6) Passende Stripe-Price-ID ermitteln
+  // 7) Passende Stripe-Price-ID ermitteln
   let priceId: string
   try {
     priceId = await getListingStripePriceId(packageCode)
@@ -358,7 +355,7 @@ export async function POST(req: Request) {
 
   const baseUrl = getBaseUrl(req)
 
-  // 7) Checkout-Session (mode: payment) erstellen – EINMALZAHLUNG fürs Inserat
+  // 8) Checkout-Session (mode: payment) erstellen – EINMALZAHLUNG fürs Inserat
   try {
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
