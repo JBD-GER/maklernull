@@ -198,8 +198,8 @@ export default function InseratePage() {
   }
 
   const handleContinueDraft = (listing: Listing) => {
-    // 👉 ggf. anpassen, wenn dein Edit-Flow anders ist
-    router.push(`/dashboard/inserieren/${listing.id}`)
+    // NEU: passt zum Formular-Flow, der ?listing=... erwartet
+    router.push(`/dashboard/inserieren?listing=${listing.id}`)
   }
 
   const handleOpen = (listing: Listing) => {

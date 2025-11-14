@@ -1,6 +1,5 @@
 // src/app/dashboard/inserieren/erfolg/page.tsx
 import Link from 'next/link'
-import Image from 'next/image'
 import { redirect } from 'next/navigation'
 import { supabaseServer } from '@/lib/supabase-server'
 
@@ -8,42 +7,6 @@ export const dynamic = 'force-dynamic'
 
 type Props = {
   searchParams: { listing?: string }
-}
-
-type DbStatus =
-  | 'draft'
-  | 'pending_payment'
-  | 'pending_sync'
-  | 'active'
-  | 'deactivated'
-  | 'marketed'
-  | 'archived'
-  | 'deleted'
-
-function mapDbStatusToUi(status: string | null | undefined): string {
-  if (!status) return 'unbekannt'
-  const s = status.toLowerCase() as DbStatus
-
-  switch (s) {
-    case 'draft':
-      return 'Entwurf'
-    case 'pending_payment':
-      return 'Zahlung ausstehend'
-    case 'pending_sync':
-      return 'Übermittlung an Portale'
-    case 'active':
-      return 'Aktiv (auf Portalen)'
-    case 'deactivated':
-      return 'Deaktiviert'
-    case 'marketed':
-      return 'Vermarktet'
-    case 'archived':
-      return 'Archiviert'
-    case 'deleted':
-      return 'Gelöscht'
-    default:
-      return status
-  }
 }
 
 export default async function InseratErfolgPage({ searchParams }: Props) {
@@ -72,32 +35,24 @@ export default async function InseratErfolgPage({ searchParams }: Props) {
     listing = data
   }
 
-  const rawStatus: string | undefined = listing?.status ?? undefined
-  const uiStatus = mapDbStatusToUi(rawStatus)
+  const dbStatus: string | undefined = listing?.status
 
-  const topChipLabel = (() => {
-    switch (rawStatus) {
-      case 'active':
-        return 'Aktiv auf Portalen'
-      case 'pending_sync':
-        return 'Übermittlung an Portale'
-      case 'pending_payment':
-        return 'Zahlung ausstehend'
-      case 'draft':
-        return 'Entwurf'
-      default:
-        return uiStatus
-    }
-  })()
+  let statusLabel = 'unbekannt'
+  if (dbStatus === 'active') statusLabel = 'Aktiv (auf Portalen)'
+  else if (dbStatus === 'pending_sync') statusLabel = 'Bridge übermittelt'
+  else if (dbStatus === 'pending_payment') statusLabel = 'Zahlung ausstehend'
+  else if (dbStatus === 'draft') statusLabel = 'Entwurf'
+  else if (dbStatus === 'deactivated') statusLabel = 'Deaktiviert'
+  else if (dbStatus === 'marketed') statusLabel = 'Vermarktet'
 
-  const isActive = rawStatus === 'active'
-  const isPendingSync = rawStatus === 'pending_sync'
+  const isActiveStatus = dbStatus === 'active'
 
   return (
-    <section className="mx-auto max-w-4xl px-4 py-10 sm:py-14">
+    <section className="mx-auto max-w-5xl px-4 py-10 sm:py-14">
+      {/* Backlink */}
       <div className="mb-6">
         <Link
-          href="/dashboard/inserate"
+          href="/dashboard/inserieren"
           className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700"
         >
           <span className="mr-1 text-lg">←</span>
@@ -105,11 +60,12 @@ export default async function InseratErfolgPage({ searchParams }: Props) {
         </Link>
       </div>
 
-      <div className="rounded-3xl border border-white/70 bg-white/80 p-6 shadow-[0_18px_60px_rgba(15,23,42,0.10)] backdrop-blur-xl sm:p-8">
-        {/* HEADER */}
+      {/* Card */}
+      <div className="rounded-3xl border border-white/70 bg-white/80 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-8">
+        {/* Header */}
         <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md">
               ✓
             </div>
             <div>
@@ -123,26 +79,15 @@ export default async function InseratErfolgPage({ searchParams }: Props) {
             </div>
           </div>
 
-          <div
-            className={[
-              'text-xs rounded-full px-3 py-1 font-medium ring-1',
-              isActive
-                ? 'bg-emerald-600 text-emerald-50 ring-emerald-700'
-                : isPendingSync
-                ? 'bg-sky-50 text-sky-700 ring-sky-100'
-                : 'bg-emerald-50 text-emerald-700 ring-emerald-100',
-            ].join(' ')}
-          >
-            Status: {topChipLabel}
+          <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100">
+            Status:&nbsp;
+            <span>{statusLabel}</span>
           </div>
         </div>
 
-        {/* WHAT HAPPENS NEXT + ANIMATION */}
-        <BridgeAnimation isActive={isActive} />
-
-        {/* LISTING SUMMARY */}
+        {/* Kurz-Zusammenfassung Inserat */}
         {listing && (
-          <div className="mt-8 rounded-2xl border border-white/80 bg-white/95 p-4 text-sm text-slate-800 sm:p-5">
+          <div className="mt-6 rounded-2xl border border-white/80 bg-white/95 p-4 text-sm text-slate-800">
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
               Zusammenfassung Ihres Inserats
             </div>
@@ -156,28 +101,27 @@ export default async function InseratErfolgPage({ searchParams }: Props) {
               </div>
               {(listing.street || listing.city) && (
                 <div className="mt-2 text-xs text-slate-600">
-                  {[listing.street, listing.house_number]
-                    .filter(Boolean)
-                    .join(' ')}
+                  {[listing.street, listing.house_number].filter(Boolean).join(' ')}
                   {listing.postal_code || listing.city ? ', ' : ''}
-                  {[listing.postal_code, listing.city]
-                    .filter(Boolean)
-                    .join(' ')}
+                  {[listing.postal_code, listing.city].filter(Boolean).join(' ')}
                 </div>
               )}
               <div className="mt-3 text-xs text-slate-500">
                 Aktueller Status in Maklernull:{' '}
-                <span className="font-medium text-slate-800">{uiStatus}</span>.
-                Sobald die Inserate an die Portale übermittelt wurden,
-                aktualisieren wir den Status automatisch. Bei Rückfragen,
-                Beanstandungen oder Korrekturwünschen seitens der Portale kann
-                sich die Veröffentlichung verzögern.
+                <span className="font-medium text-slate-800">
+                  {statusLabel}
+                </span>
+                . Sobald die Inserate an die Portale übermittelt wurden, wird der
+                Status automatisch aktualisiert.
               </div>
             </div>
           </div>
         )}
 
-        {/* CTA-BUTTONS */}
+        {/* Bridge + Portale */}
+        <BridgeAnimation isActive={isActiveStatus} />
+
+        {/* Footer Buttons */}
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
             href="/dashboard"
@@ -186,14 +130,8 @@ export default async function InseratErfolgPage({ searchParams }: Props) {
             Zum Dashboard
           </Link>
           <Link
-            href="/dashboard/inserate"
-            className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white/90 px-5 py-2 text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 hover:bg-white"
-          >
-            Inserate ansehen
-          </Link>
-          <Link
             href="/dashboard/inserieren"
-            className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white/90 px-5 py-2 text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 hover:bg-white"
+            className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white/80 px-5 py-2 text-sm font-medium text-slate-800 shadow-sm hover:border-slate-300 hover:bg-white"
           >
             Weitere Immobilie anlegen
           </Link>
@@ -204,171 +142,270 @@ export default async function InseratErfolgPage({ searchParams }: Props) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  ANIMIERTE BRIDGE: Maklernull → Portale (mit echten Logos)         */
+/*  Bridge Animation – nutzt die CSS-Klassen aus deiner globals.css   */
 /* ------------------------------------------------------------------ */
 
 function BridgeAnimation({ isActive }: { isActive: boolean }) {
   return (
-    <div className="mt-8 rounded-3xl border border-slate-100 bg-slate-50/70 p-4 text-xs text-slate-600 shadow-sm sm:p-5">
-      <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-stretch sm:justify-between">
-        {/* Maklernull Bubble mit Logo */}
-        <div className="flex flex-col items-center gap-2 sm:w-1/4">
-          <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-[0_12px_35px_rgba(15,23,42,0.6)] animate-pulse">
-            <Image
-              src="/favi.png"
-              alt="Maklernull Logo"
-              width={40}
-              height={40}
-              className="h-9 w-9 rounded-lg object-contain"
-              priority
-            />
-            <span className="pointer-events-none absolute -bottom-2 rounded-full bg-emerald-400 px-2 py-[2px] text-[9px] font-semibold uppercase tracking-wide text-slate-900 ring-1 ring-emerald-500/70">
-              Maklernull
-            </span>
-          </div>
-          <p className="mt-3 max-w-[220px] text-center text-[11px] text-slate-600">
-            Ihre Daten werden jetzt von der{' '}
-            <span className="font-medium">Maklernull Bridge</span> aufbereitet
-            und für die Portale vorbereitet.
-          </p>
-        </div>
-
-        {/* „Flugbahn“ / Bogen */}
-        <div className="relative flex w-full max-w-xs flex-1 items-center justify-center py-2 sm:max-w-sm">
-          {/* leichter Bogen-Hintergrund */}
-          <svg
-            viewBox="0 0 300 120"
-            className="h-24 w-full max-w-full text-slate-300 sm:h-24"
-            aria-hidden="true"
-          >
-            <path
-              d="M10 90 C 110 10, 190 10, 290 90"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeDasharray="4 4"
-              className="opacity-60"
-            />
-          </svg>
-
-          {/* „Pakete“, die entlang des Bogens pulsieren */}
-          <div className="pointer-events-none absolute inset-0">
-            {/* Startnah */}
-            <div
-              className="absolute left-[12%] top-[54%] h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-400/90 shadow-md animate-ping"
-              style={{ animationDuration: '1.4s' }}
-            />
-            {/* Mitte */}
-            <div
-              className="absolute left-1/2 top-[26%] h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-500 shadow-md animate-ping"
-              style={{ animationDelay: '250ms', animationDuration: '1.6s' }}
-            />
-            {/* kurz vor Portalen */}
-            <div
-              className="absolute left-[82%] top-[50%] h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-500 shadow-md animate-ping"
-              style={{ animationDelay: '500ms', animationDuration: '1.8s' }}
-            />
+    <div className="mt-8 rounded-3xl border border-emerald-50 bg-emerald-50/40 px-4 py-6 text-xs text-slate-600 shadow-sm sm:px-6 sm:py-7">
+      {/* Desktop-Layout */}
+      <div className="hidden sm:block">
+        <div className="relative flex items-center justify-between gap-6">
+          {/* Maklernull links */}
+          <div className="flex w-[190px] flex-col items-center gap-3 text-center text-xs text-slate-600">
+            <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl bg-slate-900 shadow-[0_16px_40px_rgba(15,23,42,0.55)]">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/95 shadow-inner shadow-slate-900/40">
+                <img
+                  src="/favi.png"
+                  alt="Maklernull"
+                  className="h-10 w-10 rounded-xl"
+                />
+              </div>
+            </div>
+            <div>
+              <div className="font-semibold text-slate-900">
+                Maklernull Bridge
+              </div>
+              <p className="mt-1 text-[11px] leading-snug">
+                Ihre Daten werden jetzt von der Maklernull Bridge aufbereitet
+                und für die Portale vorbereitet.
+              </p>
+            </div>
           </div>
 
-          {/* kleines Label „Bridge aktiv“ */}
-          <div className="pointer-events-none absolute inset-x-0 top-[55%] flex justify-center">
-            <span className="rounded-full bg-white/90 px-3 py-1 text-[10px] font-medium text-slate-700 shadow-sm ring-1 ring-slate-200">
-              Bridge{' '}
-              <span className="inline-flex items-center gap-1">
-                aktiv
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              </span>
-            </span>
-          </div>
-        </div>
+          {/* Linien + animierte Dots in der Mitte */}
+          <div className="relative h-40 flex-1">
+            {/* Hauptlinie Maklernull -> Bridge */}
+            <div className="bridge-main-line-desktop">
+              <div className="bridge-main-line-inner">
+                <span className="bridge-main-dot-desktop" />
+              </div>
+            </div>
 
-        {/* Portal-Logos */}
-        <div className="flex w-full flex-col items-center gap-3 sm:w-1/3">
-          <div className="grid w-full max-w-xs grid-cols-1 gap-3 sm:max-w-none sm:grid-cols-3">
-            <PortalBubble
-              name="ImmoScout24"
-              src="/immobilienscout.png"
-              alt="ImmoScout24 Logo"
-              colorClass="bg-sky-50 text-sky-800 border-sky-100"
-            />
-            <PortalBubble
-              name="Immowelt"
-              src="/Immowelt.png"
-              alt="Immowelt Logo"
-              colorClass="bg-amber-50 text-amber-800 border-amber-100"
-            />
-            <PortalBubble
-              name="Kleinanzeigen"
-              src="/kleinanzeigen.png"
-              alt="Kleinanzeigen Logo"
-              colorClass="bg-emerald-50 text-emerald-800 border-emerald-100"
-            />
+            {/* Verzweigungen Bridge -> Portale */}
+            <div className="bridge-branch-line-desktop bridge-branch-line-desktop-1">
+              <div className="bridge-branch-line-inner">
+                <span className="bridge-branch-dot-desktop bridge-branch-dot-desktop-1" />
+              </div>
+            </div>
+            <div className="bridge-branch-line-desktop bridge-branch-line-desktop-2">
+              <div className="bridge-branch-line-inner">
+                <span className="bridge-branch-dot-desktop bridge-branch-dot-desktop-2" />
+              </div>
+            </div>
+            <div className="bridge-branch-line-desktop bridge-branch-line-desktop-3">
+              <div className="bridge-branch-line-inner">
+                <span className="bridge-branch-dot-desktop bridge-branch-dot-desktop-3" />
+              </div>
+            </div>
+
+            {/* Bridge-Kapsel in der Mitte */}
+            <button
+              type="button"
+              className="bridge-pill-desktop"
+            >
+              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_0_2px_rgba(16,185,129,0.25)]" />
+              Bridge aktiv
+            </button>
           </div>
-          <p className="mt-2 max-w-sm text-center text-[11px] text-slate-600">
-            Die Inserierung wird schrittweise an{' '}
-            <span className="font-medium">ImmoScout24</span>,{' '}
-            <span className="font-medium">Immowelt</span> und{' '}
-            <span className="font-medium">Kleinanzeigen</span> übertragen. Sobald
-            alle Portale erfolgreich bestätigt haben, ist Ihr Inserat dort
-            sichtbar.
-          </p>
-          <p className="mt-1 max-w-sm text-center text-[10px] text-slate-500">
-            Bei Beanstandungen oder angeforderten Korrekturen durch die Portale
-            kann sich die Veröffentlichung verzögern. Sie werden in Maklernull
-            über Statusänderungen informiert.
-          </p>
+
+          {/* Portale rechts */}
+          <div className="flex w-[260px] flex-col gap-3 text-xs">
+            {/* ImmoScout24 */}
+            <div className="flex items-center gap-3 rounded-2xl bg-sky-50/90 px-3 py-2 shadow-sm ring-1 ring-sky-100">
+              <div className="flex h-10 w-20 items-center justify-center">
+                <img
+                  src="/immobilienscout.png"
+                  alt="ImmoScout24 Logo"
+                  className="max-h-8 w-auto"
+                />
+              </div>
+              <div className="flex flex-1 flex-col">
+                <span className="text-[11px] font-semibold text-slate-900">
+                  ImmoScout24
+                </span>
+                <span className="mt-0.5 flex items-center gap-1 text-[11px] text-emerald-600">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  Reserviert
+                </span>
+              </div>
+            </div>
+
+            {/* Immowelt */}
+            <div className="flex items-center gap-3 rounded-2xl bg-amber-50/90 px-3 py-2 shadow-sm ring-1 ring-amber-100">
+              <div className="flex h-10 w-20 items-center justify-center">
+                <img
+                  src="/Immowelt.png"
+                  alt="Immowelt Logo"
+                  className="max-h-8 w-auto"
+                />
+              </div>
+              <div className="flex flex-1 flex-col">
+                <span className="text-[11px] font-semibold text-slate-900">
+                  Immowelt
+                </span>
+                <span className="mt-0.5 flex items-center gap-1 text-[11px] text-emerald-600">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  Reserviert
+                </span>
+              </div>
+            </div>
+
+            {/* Kleinanzeigen */}
+            <div className="flex items-center gap-3 rounded-2xl bg-emerald-50/90 px-3 py-2 shadow-sm ring-1 ring-emerald-100">
+              <div className="flex h-10 w-20 items-center justify-center">
+                <img
+                  src="/kleinanzeigen.png"
+                  alt="Kleinanzeigen Logo"
+                  className="max-h-8 w-auto"
+                />
+              </div>
+              <div className="flex flex-1 flex-col">
+                <span className="text-[11px] font-semibold text-slate-900">
+                  Kleinanzeigen
+                </span>
+                <span className="mt-0.5 flex items-center gap-1 text-[11px] text-emerald-600">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  Reserviert
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="mt-4 text-[11px] text-slate-500">
-        Nächste Schritte:{' '}
-        <span className="font-medium text-slate-700">
-          1. Bridge übermittelt die Daten · 2. Portale prüfen und schalten frei ·
-          3. Status springt auf „Aktiv (auf Portalen)“ · 4. Anfragen landen in
-          Ihrem Maklernull-Dashboard.
-        </span>
+      {/* Mobile-Layout */}
+      <div className="sm:hidden">
+        <div className="flex flex-col items-center gap-4">
+          {/* Logo + kurzer Text */}
+          <div className="flex flex-col items-center gap-2 text-center text-xs text-slate-600">
+            <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 shadow-[0_16px_40px_rgba(15,23,42,0.55)]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/95 shadow-inner shadow-slate-900/40">
+                <img
+                  src="/favi.png"
+                  alt="Maklernull"
+                  className="h-8 w-8 rounded-lg"
+                />
+              </div>
+            </div>
+            <div>
+              <div className="font-semibold text-slate-900">
+                Maklernull Bridge aktiv
+              </div>
+              <p className="mt-1 text-[11px] leading-snug">
+                Wir bereiten Ihr Inserat auf und übertragen es an die Portale.
+              </p>
+            </div>
+          </div>
+
+          {/* Vertikale Animation + Portale */}
+          <div className="flex w-full max-w-sm items-start gap-3">
+            {/* Vertikale Linien + Dots */}
+            <div className="relative mt-3 w-8">
+              {/* Hauptlinie nach unten */}
+              <div className="bridge-main-line-mobile">
+                <div className="bridge-main-line-mobile-inner">
+                  <span className="bridge-main-dot-mobile" />
+                </div>
+              </div>
+
+              {/* Verzweigungen zu den drei Portalen */}
+              <div className="bridge-branch-line-mobile bridge-branch-line-mobile-1">
+                <div className="bridge-branch-line-mobile-inner">
+                  <span className="bridge-branch-dot-mobile bridge-branch-dot-mobile-1" />
+                </div>
+              </div>
+              <div className="bridge-branch-line-mobile bridge-branch-line-mobile-2">
+                <div className="bridge-branch-line-mobile-inner">
+                  <span className="bridge-branch-dot-mobile bridge-branch-dot-mobile-2" />
+                </div>
+              </div>
+              <div className="bridge-branch-line-mobile bridge-branch-line-mobile-3">
+                <div className="bridge-branch-line-mobile-inner">
+                  <span className="bridge-branch-dot-mobile bridge-branch-dot-mobile-3" />
+                </div>
+              </div>
+            </div>
+
+            {/* Portal-Karten untereinander */}
+            <div className="flex-1 space-y-3 text-xs">
+              <div className="flex items-center gap-3 rounded-2xl bg-sky-50/90 px-3 py-2 shadow-sm ring-1 ring-sky-100">
+                <div className="flex h-8 w-16 items-center justify-center">
+                  <img
+                    src="/immobilienscout.png"
+                    alt="ImmoScout24 Logo"
+                    className="max-h-7 w-auto"
+                  />
+                </div>
+                <div className="flex flex-1 flex-col">
+                  <span className="text-[11px] font-semibold text-slate-900">
+                    ImmoScout24
+                  </span>
+                  <span className="mt-0.5 flex items-center gap-1 text-[11px] text-emerald-600">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    Reserviert
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 rounded-2xl bg-amber-50/90 px-3 py-2 shadow-sm ring-1 ring-amber-100">
+                <div className="flex h-8 w-16 items-center justify-center">
+                  <img
+                    src="/Immowelt.png"
+                    alt="Immowelt Logo"
+                    className="max-h-7 w-auto"
+                  />
+                </div>
+                <div className="flex flex-1 flex-col">
+                  <span className="text-[11px] font-semibold text-slate-900">
+                    Immowelt
+                  </span>
+                  <span className="mt-0.5 flex items-center gap-1 text-[11px] text-emerald-600">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    Reserviert
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 rounded-2xl bg-emerald-50/90 px-3 py-2 shadow-sm ring-1 ring-emerald-100">
+                <div className="flex h-8 w-16 items-center justify-center">
+                  <img
+                    src="/kleinanzeigen.png"
+                    alt="Kleinanzeigen Logo"
+                    className="max-h-7 w-auto"
+                  />
+                </div>
+                <div className="flex flex-1 flex-col">
+                  <span className="text-[11px] font-semibold text-slate-900">
+                    Kleinanzeigen
+                  </span>
+                  <span className="mt-0.5 flex items-center gap-1 text-[11px] text-emerald-600">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    Reserviert
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Nächste Schritte + Hinweis */}
+      <p className="mt-5 text-[11px] leading-relaxed text-slate-500">
+        Nächste Schritte: 1. Die Bridge übermittelt die Daten an ImmoScout24,
+        Immowelt und Kleinanzeigen · 2. Portale prüfen und schalten frei · 3.
+        Der Status springt auf „Aktiv (auf Portalen)“ · 4. Anfragen landen in
+        Ihrem Maklernull-Dashboard. Bei Beanstandungen oder angeforderten
+        Korrekturen durch die Portale kann sich die Veröffentlichung verzögern.
+      </p>
 
       {isActive && (
         <div className="mt-3 rounded-2xl border border-emerald-100 bg-emerald-50/80 px-3 py-2 text-[11px] text-emerald-800">
-          Ihr Inserat ist bereits als <span className="font-semibold">aktiv</span>{' '}
-          markiert. Je nach Portal kann es wenige Minuten dauern, bis es überall
-          sichtbar ist.
+          Ihr Inserat ist bereits als{' '}
+          <span className="font-semibold">aktiv</span> markiert. Je nach Portal
+          kann es wenige Minuten dauern, bis es überall sichtbar ist.
         </div>
       )}
-    </div>
-  )
-}
-
-type PortalBubbleProps = {
-  name: string
-  src: string
-  alt: string
-  colorClass: string
-}
-
-function PortalBubble({ name, src, alt, colorClass }: PortalBubbleProps) {
-  return (
-    <div
-      className={[
-        'flex flex-col items-center justify-center rounded-2xl border px-3 py-2 text-center text-[10px] shadow-sm',
-        colorClass,
-      ].join(' ')}
-    >
-      <div className="mb-1 flex h-7 items-center justify-center">
-        <Image
-          src={src}
-          alt={alt}
-          width={40}
-          height={24}
-          className="h-6 w-auto object-contain"
-        />
-      </div>
-      <span className="font-medium leading-tight">{name}</span>
-      <span className="mt-1 inline-flex items-center gap-1 text-[9px] text-emerald-700">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-        Rreserviert
-      </span>
     </div>
   )
 }
