@@ -135,7 +135,6 @@ type ProfileForStripe = {
   postal_code?: string | null
   city?: string | null
   country?: string | null
-  vat_number?: string | null
   stripe_customer_id?: string | null
 }
 
@@ -177,28 +176,6 @@ async function syncCustomerDataToStripe(customerId: string, p: ProfileForStripe)
       company_name: p.company_name || '',
     },
   })
-
-  // VAT als Tax ID
-  if (p.vat_number && p.vat_number.trim()) {
-    const vat = p.vat_number.trim()
-    try {
-      const existing = await stripe.customers.listTaxIds(customerId, {
-        limit: 20,
-      })
-      const same = existing.data.find(
-        (t) =>
-          t.type === 'eu_vat' && t.value?.toUpperCase() === vat.toUpperCase()
-      )
-      if (!same) {
-        await stripe.customers.createTaxId(customerId, {
-          type: 'eu_vat',
-          value: vat,
-        })
-      }
-    } catch (e) {
-      console.warn('[stripe] createTaxId failed (ignored):', (e as any)?.message)
-    }
-  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -254,7 +231,6 @@ export async function POST(req: Request) {
       postal_code,
       city,
       country,
-      vat_number,
       stripe_customer_id
     `
     )
@@ -281,7 +257,6 @@ export async function POST(req: Request) {
     postal_code: dbProfile?.postal_code ?? meta.postal_code ?? null,
     city: dbProfile?.city ?? meta.city ?? null,
     country: dbProfile?.country ?? meta.country ?? null,
-    vat_number: (dbProfile as any)?.vat_number ?? meta.vat_number ?? null,
     stripe_customer_id: (dbProfile as any)?.stripe_customer_id ?? null,
   }
 
@@ -304,7 +279,7 @@ export async function POST(req: Request) {
     }
   }
 
-  // 4) Profil-Daten (Name, Firma, Adresse, USt) zum Customer schieben
+  // 4) Profil-Daten (Name, Firma, Adresse) zum Customer schieben
   await syncCustomerDataToStripe(customerId!, mergedProfile)
 
   // 5) Profil in DB upserten/aktualisieren (damit stripe_customer_id sicher sitzt)
