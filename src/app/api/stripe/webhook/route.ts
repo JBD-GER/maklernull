@@ -1,81 +1,97 @@
+// src/app/api/stripe/webhook/route.ts
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
-import { getSafePeriodBounds } from '@/lib/stripe-period'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
+
 const admin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// ---------- bestehende Helfer ----------
-
-async function updateBy(
-  where: Partial<{ id: string; customerId: string; email: string }>,
-  patch: Record<string, any>
-) {
-  if (where.id) {
-    await admin.from('profiles').update(patch).eq('id', where.id)
-    return
-  }
-  if (where.customerId) {
-    const { count } = await admin
-      .from('profiles')
-      .update(patch, { count: 'exact' })
-      .eq('stripe_customer_id', where.customerId)
-    if ((count ?? 0) > 0) return
-  }
-  if (where.email) {
-    const { data } = await admin
-      .from('profiles')
-      .select('id,stripe_customer_id')
-      .eq('email', where.email)
-    if (data?.length === 1)
-      await admin.from('profiles').update(patch).eq('id', data[0].id)
-  }
-}
-
-function toIso(ts?: number | null) {
-  return ts ? new Date(ts * 1000).toISOString() : null
-}
-
-// ---------- NEU: Helper für Listings ----------
+/* -------------------------------------------------------------------------- */
+/*                    Helper: Zahlung für Inserat (Listing)                   */
+/* -------------------------------------------------------------------------- */
 
 async function handleListingPayment(session: Stripe.Checkout.Session) {
   const listingId = session.metadata?.listing_id
-  if (!listingId) return
+  if (!listingId) {
+    console.warn('[webhook] Listing payment without listing_id in metadata')
+    return
+  }
 
   const paymentIntentId =
     typeof session.payment_intent === 'string'
       ? session.payment_intent
-      : null
+      : session.payment_intent?.id ?? null
 
-  // Listing auf pending_sync setzen → bereit für EstateSync
-  const { error } = await admin
+  // runtime_months zuerst aus Metadata lesen
+  let runtimeMonths: number | null = null
+
+  const metaRuntime = session.metadata?.runtime_months
+  if (metaRuntime) {
+    const n = Number(metaRuntime)
+    if (!Number.isNaN(n) && n > 0) {
+      runtimeMonths = n
+    }
+  }
+
+  // falls nicht in metadata → aus DB holen
+  if (runtimeMonths === null) {
+    const { data: listing, error } = await admin
+      .from('listings')
+      .select('runtime_months')
+      .eq('id', listingId)
+      .maybeSingle()
+
+    if (error) {
+      console.error('[webhook] Error getting listing for runtime_months:', error)
+    }
+
+    if (listing?.runtime_months) {
+      const n = Number(listing.runtime_months)
+      if (!Number.isNaN(n) && n > 0) {
+        runtimeMonths = n
+      }
+    }
+  }
+
+  // Fallback: 1 Monat
+  if (runtimeMonths === null || runtimeMonths <= 0) {
+    runtimeMonths = 1
+  }
+
+  const now = new Date()
+  const activeFrom = now.toISOString()
+  const end = new Date(now)
+  end.setMonth(end.getMonth() + runtimeMonths)
+  const activeUntil = end.toISOString()
+
+  const { error: updateError } = await admin
     .from('listings')
     .update({
-      status: 'pending_sync',
+      status: 'active', // 👈 Inserat nach Zahlung aktiv
       stripe_payment_intent_id: paymentIntentId,
+      active_from: activeFrom,
+      active_until: activeUntil,
     })
     .eq('id', listingId)
 
-  if (error) {
-    console.error('[webhook] Error updating listing after payment:', error)
+  if (updateError) {
+    console.error('[webhook] Error updating listing after payment:', updateError)
   }
 
-  // 🔜 HIER SPÄTER:
-  // 1. Listing + User laden
-  // 2. zu EstateSync Property mappen (POST /properties)
-  // 3. für Immoscout (und später Immowelt/Kleinanzeigen) POST /listings
-  // 4. Listing-Status in DB auf "active" setzen
+  // 🔜 Später: hier kannst du EstateSync einhängen (Property + Listings anlegen)
 }
 
-// ---------- Handler ----------
+/* -------------------------------------------------------------------------- */
+/*                                   Handler                                  */
+/* -------------------------------------------------------------------------- */
 
 export async function POST(req: Request) {
   const raw = await req.text()
@@ -85,150 +101,26 @@ export async function POST(req: Request) {
   try {
     event = stripe.webhooks.constructEvent(raw, sig, webhookSecret)
   } catch (err: any) {
+    console.error('[webhook] signature error:', err?.message)
     return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 })
   }
 
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
-        const s = event.data.object as Stripe.Checkout.Session
-        const sess = await stripe.checkout.sessions.retrieve(s.id, {
-          expand: ['subscription'],
-        })
+        const sess = event.data.object as Stripe.Checkout.Session
 
-        // 🔹 NEU: Listing-Einmalzahlung (mode: payment)
-        if (
-          sess.mode === 'payment' &&
-          sess.metadata?.kind === 'listing'
-        ) {
+        // Nur Einmalzahlungen für Inserate interessieren uns
+        if (sess.mode === 'payment' && sess.metadata?.kind === 'listing') {
           await handleListingPayment(sess)
-          break
-        }
-
-        // 🔹 BESTEHEND: Abo-Flow (mode: subscription)
-        if (sess.mode === 'subscription') {
-          const subRaw: any = sess.subscription || null
-          const sub = subRaw
-            ? await stripe.subscriptions.retrieve(subRaw.id, {
-                expand: ['items.data.price'],
-              })
-            : null
-
-          const bounds = sub
-            ? getSafePeriodBounds(sub)
-            : { startIso: null, endIso: null }
-          const statusForDb = sub?.cancel_at_period_end
-            ? 'canceled'
-            : sub?.status ?? 'active'
-
-          await updateBy(
-            {
-              id:
-                (sess.client_reference_id ||
-                  sub?.metadata?.supabase_user_id) ?? undefined,
-              customerId: sess.customer as string | undefined,
-              email: sess.customer_details?.email ?? undefined,
-            },
-            {
-              stripe_customer_id: (sess.customer as string) ?? null,
-              stripe_subscription_id: sub?.id ?? null,
-              subscription_status: statusForDb,
-              current_period_end: bounds.endIso,
-              plan:
-                sub?.items?.data?.[0]?.price?.nickname || 'starter',
-            }
-          )
         }
 
         break
       }
 
-      // ----- Rest wie bisher -----
-
-      case 'customer.subscription.created':
-      case 'customer.subscription.updated': {
-        const subEv = event.data.object as any
-        const full = await stripe.subscriptions.retrieve(subEv.id, {
-          expand: ['items.data.price'],
-        })
-        const bounds = getSafePeriodBounds(full)
-        const statusForDb = full?.cancel_at_period_end
-          ? 'canceled'
-          : full?.status ?? 'active'
-
-        await updateBy(
-          {
-            id: full?.metadata?.supabase_user_id ?? undefined,
-            customerId: full.customer as string,
-          },
-          {
-            stripe_customer_id: full.customer ?? null,
-            stripe_subscription_id: full.id ?? null,
-            subscription_status: statusForDb,
-            current_period_end: bounds.endIso,
-            plan:
-              full.items?.data?.[0]?.price?.nickname || 'starter',
-          }
-        )
+      default:
+        // andere Events aktuell ignorieren
         break
-      }
-
-      case 'invoice.payment_succeeded':
-      case 'invoice.paid': {
-        const inv = event.data.object as Stripe.Invoice
-        const subId =
-          (inv as any).subscription ||
-          inv.lines?.data?.[0]?.subscription ||
-          null
-        if (!subId) break
-        const sub: any = await stripe.subscriptions.retrieve(subId, {
-          expand: ['items.data.price'],
-        })
-        const bounds = getSafePeriodBounds(sub)
-        const statusForDb = sub?.cancel_at_period_end
-          ? 'canceled'
-          : sub?.status ?? 'active'
-
-        await updateBy(
-          {
-            id: sub?.metadata?.supabase_user_id ?? undefined,
-            customerId: inv.customer as string,
-          },
-          {
-            stripe_subscription_id: sub.id ?? null,
-            subscription_status: statusForDb,
-            current_period_end: bounds.endIso,
-            stripe_customer_id: inv.customer ?? null,
-          }
-        )
-        break
-      }
-
-      case 'customer.subscription.deleted': {
-        const sub = event.data.object as any
-        await updateBy(
-          {
-            id: sub?.metadata?.supabase_user_id ?? undefined,
-            customerId: sub.customer as string,
-          },
-          {
-            subscription_status: 'canceled',
-            current_period_end:
-              toIso((sub as any)?.ended_at) ??
-              new Date().toISOString(),
-          }
-        )
-        break
-      }
-
-      case 'invoice.payment_failed': {
-        const inv = event.data.object as Stripe.Invoice
-        await updateBy(
-          { customerId: inv.customer as string },
-          { subscription_status: 'past_due' }
-        )
-        break
-      }
     }
   } catch (e) {
     console.error('[webhook] handler error:', e)

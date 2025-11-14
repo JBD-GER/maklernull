@@ -39,14 +39,14 @@ const RENT_CATEGORIES = [
 const STEPS = ['Basis', 'Adresse', 'Details', 'Preis & Kontakt']
 
 export default function InserierenPage() {
-    const router = useRouter()   
+  const router = useRouter()
   const [step, setStep] = useState(0)
 
-  const [transactionType, setTransactionType] = useState<TransactionType>('sale')
+  const [transactionType, setTransactionType] =
+    useState<TransactionType>('sale')
   const [usageType, setUsageType] = useState<UsageType>('residential')
   const [saleCategory, setSaleCategory] = useState<string>('')
   const [rentCategory, setRentCategory] = useState<string>('')
-  
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -77,6 +77,7 @@ export default function InserierenPage() {
   const [acceptPrivacy, setAcceptPrivacy] = useState(false)
 
   const [submitting, setSubmitting] = useState(false)
+  const [savingDraft, setSavingDraft] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
@@ -125,61 +126,97 @@ export default function InserierenPage() {
     if (!isFirstStep) setStep((s) => s - 1)
   }
 
-const handleSubmit = async () => {
-  if (!canContinue()) return
-  setSubmitting(true)
-  setError(null)
-  setSuccess(null)
+  // Hilfsfunktion: Payload aus dem aktuellen State bauen
+  const buildPayload = (status?: 'draft' | 'pending_payment') => ({
+    transactionType,
+    usageType,
+    saleCategory,
+    rentCategory,
+    title,
+    description,
+    street,
+    houseNumber,
+    postalCode,
+    city,
+    country,
+    livingArea,
+    landArea,
+    rooms,
+    floor,
+    totalFloors,
+    yearBuilt,
+    price,
+    currency,
+    availability,
+    isFurnished,
+    contactName,
+    contactEmail,
+    contactPhone,
+    status,
+  })
 
-  try {
-    const res = await fetch('/api/listings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        transactionType,
-        usageType,
-        saleCategory,
-        rentCategory,
-        title,
-        description,
-        street,
-        houseNumber,
-        postalCode,
-        city,
-        country,
-        livingArea,
-        landArea,
-        rooms,
-        floor,
-        totalFloors,
-        yearBuilt,
-        price,
-        currency,
-        availability,
-        isFurnished,
-        contactName,
-        contactEmail,
-        contactPhone,
-      }),
-    })
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}))
-      throw new Error(data.error || 'Fehler beim Speichern')
-    }
-
-    const { listing } = await res.json()
-
-    // ⬇️ HIER angepasst: transactionType mitgeben
-    router.push(
-      `/dashboard/inserieren/paket?listing=${listing.id}&kind=${transactionType}`
-    )
-  } catch (e: any) {
-    setError(e.message || 'Unbekannter Fehler')
-  } finally {
+  // 👉 Entwurf speichern – ohne Step-Validierung, speichert einfach den aktuellen Stand
+  const handleSaveDraft = async () => {
+    setSavingDraft(true)
     setSubmitting(false)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      const res = await fetch('/api/listings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildPayload('draft')),
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Fehler beim Speichern des Entwurfs')
+      }
+
+      await res.json()
+
+      setSuccess(
+        'Entwurf gespeichert. Du findest dein Inserat später im Bereich „Meine Inserate“.'
+      )
+    } catch (e: any) {
+      setError(e.message || 'Unbekannter Fehler beim Speichern des Entwurfs')
+    } finally {
+      setSavingDraft(false)
+    }
   }
-}
+
+  const handleSubmit = async () => {
+    if (!canContinue()) return
+    setSubmitting(true)
+    setSavingDraft(false)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      const res = await fetch('/api/listings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildPayload('pending_payment')),
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Fehler beim Speichern')
+      }
+
+      const { listing } = await res.json()
+
+      // ⬇️ HIER angepasst: transactionType mitgeben
+      router.push(
+        `/dashboard/inserieren/paket?listing=${listing.id}&kind=${transactionType}`
+      )
+    } catch (e: any) {
+      setError(e.message || 'Unbekannter Fehler')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   return (
     <section className="mx-auto max-w-5xl space-y-6 px-4 pb-10 pt-4">
@@ -190,8 +227,8 @@ const handleSubmit = async () => {
             Immobilie inserieren
           </h1>
           <p className="text-sm text-slate-600">
-            Erstelle Schritt für Schritt dein Exposé. Später kümmern wir uns um
-            Zahlung, EstateSync & Veröffentlichung auf ImmoScout24, Immowelt und Kleinanzeigen.
+            Erstelle Schritt für Schritt dein Exposé. Später übernimmt die
+            Maklernull Bridge die Übertragung zu ImmoScout24, Immowelt und Kleinanzeigen.
           </p>
         </div>
         <div className="rounded-2xl border border-white/60 bg-white/80 px-4 py-2 text-xs text-slate-600 shadow-sm backdrop-blur-xl">
@@ -338,6 +375,16 @@ const handleSubmit = async () => {
             </button>
 
             <div className="flex flex-1 items-center justify-end gap-3">
+              {/* Neuer Button: Entwurf */}
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                disabled={savingDraft}
+                className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {savingDraft ? 'Speichere Entwurf...' : 'Als Entwurf speichern'}
+              </button>
+
               {!isLastStep && (
                 <button
                   type="button"
@@ -420,9 +467,12 @@ const handleSubmit = async () => {
               Nächste Schritte
             </h3>
             <ol className="list-decimal space-y-1 pl-5">
-              <li>Inserat ausfüllen & speichern</li>
-              <li>Zahlung über Stripe abschließen</li>
-              <li>Automatische Übertragung an EstateSync</li>
+              <li>Inserat ausfüllen & als Entwurf speichern</li>
+              <li>Inserat finalisieren & Zahlung über Stripe abschließen</li>
+              <li>
+                Automatische Übertragung über die Maklernull Bridge zu den
+                Portalen
+              </li>
               <li>Veröffentlichung auf ImmoScout24, Immowelt & Kleinanzeigen</li>
             </ol>
           </div>
@@ -465,7 +515,8 @@ function StepBasis(props: StepBasisProps) {
     setDescription,
   } = props
 
-  const categories = transactionType === 'sale' ? SALE_CATEGORIES : RENT_CATEGORIES
+  const categories =
+    transactionType === 'sale' ? SALE_CATEGORIES : RENT_CATEGORIES
 
   return (
     <div className="space-y-5">

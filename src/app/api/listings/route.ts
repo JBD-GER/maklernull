@@ -6,6 +6,13 @@ export const dynamic = 'force-dynamic'
 
 type TransactionType = 'sale' | 'rent'
 type UsageType = 'residential' | 'commercial'
+type ListingStatus =
+  | 'draft'
+  | 'pending_payment'
+  | 'pending_sync'
+  | 'active'
+  | 'archived'
+  | 'deleted'
 
 export async function POST(req: Request) {
   const supabase = await supabaseServer()
@@ -46,15 +53,21 @@ export async function POST(req: Request) {
     contactName,
     contactEmail,
     contactPhone,
+    status: statusFromBody,
   } = body
 
-  const objectCategory = (transactionType === 'sale' ? saleCategory : rentCategory) || null
+  // Status: nur 'draft' oder 'pending_payment' aus Sicherheitsgründen
+  const status: ListingStatus =
+    statusFromBody === 'draft' ? 'draft' : 'pending_payment'
+
+  const objectCategory =
+    (transactionType === 'sale' ? saleCategory : rentCategory) || null
 
   const { data, error } = await supabase
     .from('listings')
     .insert({
       user_id: user.id,
-      status: 'pending_payment', // 💡 Bezahlen ist der nächste Schritt
+      status,
       transaction_type: transactionType as TransactionType,
       usage_type: usageType as UsageType,
       object_category: objectCategory,

@@ -84,7 +84,7 @@ const LISTING_PRODUCT_IDS: Record<string, string | undefined> = {
   VM_TOP_2: process.env.STRIPE_PRICE_VM_TOP_2,
   VM_TOP_3: process.env.STRIPE_PRICE_VM_TOP_3,
 
-  // Optionale Testcodes – nur zum Workflow-Testen
+  // Optionale Testcodes
   TEST_1: process.env.STRIPE_PRICE_TEST_1,
   TEST_2: process.env.STRIPE_PRICE_TEST_2,
   TEST_3: process.env.STRIPE_PRICE_TEST_3,
@@ -156,21 +156,44 @@ async function syncCustomerDataToStripe(customerId: string, p: ProfileForStripe)
   const contactName =
     [p.first_name, p.last_name].filter(Boolean).join(' ').trim() || undefined
 
-  const displayName =
-    p.company_name && p.company_name.trim().length > 1
-      ? p.company_name
-      : contactName || undefined
+  const hasCompany =
+    !!p.company_name && p.company_name.trim().length > 1
+
+  // Name, der oben auf der Rechnung steht
+  const customerName = hasCompany
+    ? p.company_name!.trim()
+    : contactName || undefined
+
+  // Custom-Fields für die Rechnung (unterhalb der Adressdaten)
+  const customFields: Stripe.CustomerUpdateParams.InvoiceSettings.CustomField[] = []
+
+  if (hasCompany) {
+    customFields.push({
+      name: 'Firma',
+      value: p.company_name!.trim(),
+    })
+  }
+
+  if (contactName) {
+    customFields.push({
+      name: 'Kontakt',
+      value: contactName,
+    })
+  }
+
+  const invoiceSettings: Stripe.CustomerUpdateParams.InvoiceSettings = {}
+
+  if (customFields.length) {
+    invoiceSettings.custom_fields = customFields
+  }
 
   await stripe.customers.update(customerId, {
-    name: displayName,
+    name: customerName,
     email: p.email || undefined,
     address: addr,
     shipping:
       addr && contactName ? { name: contactName, address: addr } : undefined,
-    invoice_settings:
-      p.company_name && contactName
-        ? { custom_fields: [{ name: 'Kontakt', value: contactName }] }
-        : undefined,
+    invoice_settings: customFields.length ? invoiceSettings : undefined,
     metadata: {
       contact_name: contactName || '',
       company_name: p.company_name || '',
@@ -303,7 +326,7 @@ export async function POST(req: Request) {
 
   if (upsertError) {
     console.error('[listings/checkout] profile upsert error:', upsertError)
-    // kein Hard-Abbruch mehr: Stripe-Checkout darf trotzdem weiterlaufen
+    // kein Hard-Abbruch: Stripe-Checkout darf trotzdem weiterlaufen
   }
 
   // 6) Paket & Laufzeit im Listing speichern
