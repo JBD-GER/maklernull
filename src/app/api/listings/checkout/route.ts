@@ -240,8 +240,10 @@ export async function POST(req: Request) {
     )
   }
 
-  // 2) Profil holen → für Rechnung / Customer-Daten
-  const { data: profile, error: profileError } = await admin
+  // 2) Profil holen ODER automatisch anlegen, falls noch keins existiert
+  let profile: ProfileForStripe | null = null
+
+  const { data: existingProfile, error: profileError } = await admin
     .from('profiles')
     .select(
       `
@@ -259,24 +261,57 @@ export async function POST(req: Request) {
     `
     )
     .eq('id', user.id)
-    .single()
+    .maybeSingle() // gibt null zurück, wenn nichts gefunden
+    // .single() wäre hier strenger und wir müssten Fehlercode prüfen
 
-  if (profileError || !profile) {
-    return NextResponse.json(
-      {
-        error:
-          'Profil nicht gefunden – bitte Profil zuerst im Bereich "Einstellungen" vervollständigen.',
-      },
-      { status: 400 }
-    )
+  if (!existingProfile) {
+    // Falls noch kein Profil in der Tabelle ist, automatisch eines anlegen
+    const { data: createdProfile, error: createError } = await admin
+      .from('profiles')
+      .insert({
+        id: user.id,
+        email: user.email ?? '', // NOT NULL in Tabelle
+      })
+      .select(
+        `
+        email,
+        first_name,
+        last_name,
+        company_name,
+        street,
+        house_number,
+        postal_code,
+        city,
+        country,
+        vat_number,
+        stripe_customer_id
+      `
+      )
+      .single()
+
+    if (createError || !createdProfile) {
+      console.error('[listings/checkout] create profile error:', createError)
+      return NextResponse.json(
+        {
+          error:
+            'Profil konnte nicht automatisch angelegt werden – bitte Profil im Bereich "Einstellungen" einmal speichern.',
+        },
+        { status: 400 }
+      )
+    }
+
+    profile = createdProfile as ProfileForStripe
+  } else {
+    profile = existingProfile as ProfileForStripe
   }
 
   // 3) Stripe-Customer sicherstellen
-  let customerId: string | null = profile.stripe_customer_id || null
+  let customerId: string | null =
+    (profile as any).stripe_customer_id || null
 
   if (!customerId) {
     const cust = await stripe.customers.create({
-      email: profile.email || undefined,
+      email: profile.email || user.email || undefined,
       metadata: { supabase_user_id: user.id },
     })
     customerId = cust.id
